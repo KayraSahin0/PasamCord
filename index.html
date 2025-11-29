@@ -18,76 +18,75 @@
             </div>
             <p style="color:#bbb; margin-bottom:20px;">Odaya katılmak için isim belirleyin.</p>
             <input type="text" id="username-input" placeholder="Adınız" autocomplete="off">
-            <button class="btn btn-call" onclick="loginUser()">
+            <button class="btn btn-call" onclick="window.loginUser()">
                 Giriş Yap <i class="fa-solid fa-arrow-right"></i>
             </button>
         </div>
     </div>
 
-    <div class="main-card hidden" id="app-screen">
-        
-        <div class="top-bar">
-            <div class="header-small"><i class="fa-brands fa-discord"></i> PasamCord</div>
-            <div class="top-actions">
-                <button class="btn-icon" onclick="toggleSettings()" title="Ayarlar">
-                    <i class="fa-solid fa-gear"></i>
-                </button>
-                <button class="btn-icon" onclick="toggleParticipants()" title="Katılımcılar">
-                    <i class="fa-solid fa-users"></i>
-                    <span id="participant-badge" class="badge">1</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="id-section">
-            <p class="label">ODA KİMLİĞİN</p>
-            <div class="id-box" onclick="copyId()">
-                <span id="my-id">#...</span>
-                <i class="fa-regular fa-copy copy-icon"></i>
-            </div>
-            <div id="copy-feedback" class="fade-out">Kopyalandı!</div>
-        </div>
-
-        <div class="connect-section" id="connect-panel">
-            <div class="welcome-text">Hoşgeldin, <span id="display-username" style="color:var(--primary)"></span>!</div>
-            <div class="input-group">
-                <input type="text" id="remote-id" placeholder="Bağlanılacak ID (Örn: #A1B2)">
-            </div>
-            <button class="btn btn-call" onclick="startCall()">
-                <i class="fa-solid fa-video"></i> Bağlan
-            </button>
-        </div>
-
-        <div class="call-active-section hidden" id="call-panel">
+    <div class="main-wrapper">
+        <div class="main-card hidden" id="app-screen">
             
-            <div class="video-grid" id="video-grid">
+            <div class="top-bar">
+                <div class="header-small"><i class="fa-brands fa-discord"></i> PasamCord</div>
+                <div class="top-actions">
+                    <button class="btn-icon" onclick="window.toggleSettings()" title="Ayarlar">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                    <button class="btn-icon" onclick="window.toggleParticipants()" title="Katılımcılar">
+                        <i class="fa-solid fa-users"></i>
+                        <span id="participant-badge" class="badge">1</span>
+                    </button>
                 </div>
+            </div>
 
-            <p class="timer" id="call-timer">00:00</p>
-            
-            <div class="control-buttons">
-                <button class="btn-circle btn-secondary" id="camera-btn" onclick="toggleCamera()">
-                    <i class="fa-solid fa-video" id="camera-icon"></i>
-                </button>
-                <button class="btn-circle btn-secondary" id="mute-btn" onclick="toggleMute()">
-                    <i class="fa-solid fa-microphone" id="mute-icon"></i>
-                </button>
-                <button class="btn-circle btn-hangup-circle" onclick="endCall()">
-                    <i class="fa-solid fa-phone-slash"></i>
+            <div class="id-section">
+                <p class="label">ODA KİMLİĞİN</p>
+                <div class="id-box" onclick="window.copyId()">
+                    <span id="my-id">#...</span>
+                    <i class="fa-regular fa-copy copy-icon"></i>
+                </div>
+                <div id="copy-feedback" class="fade-out">Kopyalandı!</div>
+            </div>
+
+            <div class="connect-section" id="connect-panel">
+                <div class="welcome-text">Hoşgeldin, <span id="display-username" style="color:var(--primary)"></span>!</div>
+                <div class="input-group">
+                    <input type="text" id="remote-id" placeholder="Bağlanılacak ID (Örn: #A1B2)">
+                </div>
+                <button class="btn btn-call" onclick="window.startCall()">
+                    <i class="fa-solid fa-video"></i> Bağlan
                 </button>
             </div>
-        </div>
 
-        <div class="footer-status">
-            <span id="status-dot" class="dot yellow"></span>
-            <span id="status-text">Başlatılıyor...</span>
+            <div class="call-active-section hidden" id="call-panel">
+                <div class="video-grid" id="video-grid"></div>
+                <p class="timer" id="call-timer">00:00</p>
+                
+                <div class="control-buttons">
+                    <button class="btn-circle btn-secondary btn-off" id="camera-btn" onclick="window.toggleCamera()">
+                        <i class="fa-solid fa-video-slash" id="camera-icon"></i>
+                    </button>
+                    <button class="btn-circle btn-secondary" id="mute-btn" onclick="window.toggleMute()">
+                        <i class="fa-solid fa-microphone" id="mute-icon"></i>
+                    </button>
+                    <button class="btn-circle btn-hangup-circle" onclick="window.endCall()">
+                        <i class="fa-solid fa-phone-slash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="footer-status">
+                <span id="status-dot" class="dot yellow"></span>
+                <span id="status-text">Başlatılıyor...</span>
+            </div>
         </div>
     </div>
 
     <div class="side-panel" id="participants-panel">
         <div class="panel-header">
             <h3>Katılımcılar</h3>
-            <button class="btn-close-panel" onclick="toggleParticipants()">&times;</button>
+            <button class="btn-close-panel" onclick="window.toggleParticipants()">&times;</button>
         </div>
         <ul class="participant-list" id="participant-list"></ul>
     </div>
@@ -95,36 +94,31 @@
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="modal-content settings-content">
             <div class="settings-header">
-                <h3>Ses & Video Ayarları</h3>
-                <button onclick="toggleSettings()" class="close-settings">&times;</button>
+                <h3>Ayarlar</h3>
+                <button onclick="window.toggleSettings()" class="close-settings">&times;</button>
             </div>
             
             <div class="setting-group">
-                <label><i class="fa-solid fa-volume-high"></i> Hoparlör Sesi</label>
-                <input type="range" min="0" max="1" step="0.1" value="1" oninput="changeOutputVolume(this.value)">
+                <label>Hoparlör Sesi</label>
+                <input type="range" min="0" max="1" step="0.1" value="1" oninput="window.changeOutputVolume(this.value)">
             </div>
-            
             <div class="setting-group">
-                <label><i class="fa-solid fa-wave-square"></i> Mikrofon Hassasiyeti (Gain)</label>
-                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#aaa; margin-bottom:5px;">
-                    <span>Düşük</span>
-                    <span>Normal (0)</span>
-                    <span>Yüksek</span>
-                </div>
-                <input type="range" min="-1" max="1" step="0.1" value="0" oninput="changeMicGain(this.value)">
-                <p style="font-size:0.75rem; color:#888; margin-top:5px;">Mikrofon sesini yazılımsal olarak artırır/azaltır.</p>
+                <label>Mikrofon Hassasiyeti</label>
+                <input type="range" min="-1" max="1" step="0.1" value="0" oninput="window.changeMicGain(this.value)">
             </div>
-
             <div class="setting-group">
                 <label>Giriş Cihazları</label>
-                <select id="audio-input-select" onchange="changeAudioInput()" style="margin-bottom:10px"></select>
-                <select id="video-input-select" onchange="changeVideoInput()"></select>
+                <select id="audio-input-select" onchange="window.changeAudioInput()"></select>
+                <select id="video-input-select" onchange="window.changeVideoInput()"></select>
             </div>
-
-            <button class="btn btn-call" onclick="toggleSettings()" style="margin-top:10px;">Tamam</button>
+            <div class="setting-group">
+                <label>Çıkış Cihazı</label>
+                <select id="audio-output-select" onchange="window.changeAudioOutput()"></select>
+            </div>
+            <button class="btn btn-call" onclick="window.toggleSettings()">Tamam</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>

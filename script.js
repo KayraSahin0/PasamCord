@@ -3,18 +3,14 @@ const videoGrid = document.getElementById('video-grid');
 const participantList = document.getElementById('participant-list');
 const participantBadge = document.getElementById('participant-badge');
 
-// Global Değişkenler
 let myUsername = "Ben";
 let localStream = null;
 let peer = null;
+const peers = {}; 
 
-// Multi-Peer Yönetimi (Çoklu Bağlantı için)
-const peers = {}; // Bağlı olan herkesin çağrılarını ve bilgilerini tutar
-const activeStreams = {}; // Aktif streamler
-
-// Audio Context (Ses Motoru)
+// Audio Context
 let audioContext;
-let gainNode; // Ses yükseltici
+let gainNode;
 let micSource;
 let audioDestination;
 
@@ -34,50 +30,33 @@ async function loginUser() {
 
 async function startLocalStream() {
     try {
-        // Ham mikrofon ve kamera verisini al
         const rawStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
-        // --- SES MOTORU (GAIN) KURULUMU ---
-        // Web Audio API bağlamı oluştur
+        // Audio Engine
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Mikrofonu kaynak olarak al
         micSource = audioContext.createMediaStreamSource(rawStream);
-        
-        // Gain (Ses Seviyesi) Düğümü oluştur
         gainNode = audioContext.createGain();
-        gainNode.gain.value = 1.0; // Varsayılan (Normal, Slider 0)
-        
-        // İşlenmiş ses için hedef oluştur
+        gainNode.gain.value = 1.0; 
         audioDestination = audioContext.createMediaStreamDestination();
-        
-        // Bağlantıyı Kur: Mikrofon -> Gain -> Hedef
         micSource.connect(gainNode);
         gainNode.connect(audioDestination);
         
-        // PeerJS'e göndereceğimiz Yeni Stream:
-        // Görüntü (Ham) + Ses (İşlenmiş)
         localStream = new MediaStream([
-            rawStream.getVideoTracks()[0],          // Orijinal Video
-            audioDestination.stream.getAudioTracks()[0] // İşlenmiş Ses
+            rawStream.getVideoTracks()[0],          
+            audioDestination.stream.getAudioTracks()[0] 
         ]);
 
-        // Kendi görüntümüzü ekrana ekle
         addVideoStream('local-video', localStream, myUsername, true);
-        
-        // Peer'i başlat (Rastgele ID ile)
         initPeer();
-
-        // Cihazları listele
-        getDevices();
+        getDevices(); // Cihazları getir
 
     } catch (err) {
-        console.error("Medya hatası:", err);
-        alert("Kamera/Mikrofon izni verilmedi!");
+        console.error("Hata:", err);
+        alert("Kamera/Mikrofon izni gerekli!");
     }
 }
 
-// --- 2. PEERJS BAĞLANTILARI ---
+// --- 2. PEERJS ---
 function initPeer() {
     const myId = Math.random().toString(36).substr(2, 5).toUpperCase();
     peer = new Peer(myId);
@@ -87,69 +66,43 @@ function initPeer() {
         updateParticipants();
     });
 
-    // GELEN ARAMA (Biri odaya katıldığında)
     peer.on('call', call => {
-        // Aramayı cevapla (Kendi streamimizi gönder)
         call.answer(localStream);
-        
-        // Karşıdan gelen stream'i işle
         handleCall(call);
     });
 
-    // GELEN VERİ (İsim bilgisini almak için)
     peer.on('connection', conn => {
         conn.on('data', data => {
-            if(data.type === 'name') {
-                // İsmi kaydet ve UI güncelle
-                if(peers[conn.peer]) {
-                    peers[conn.peer].name = data.name;
-                    updateNameTag(conn.peer, data.name);
-                    updateParticipants();
-                }
+            if(data.type === 'name' && peers[conn.peer]) {
+                peers[conn.peer].name = data.name;
+                updateNameTag(conn.peer, data.name);
+                updateParticipants();
             }
         });
     });
 }
 
-// ARAMA YAPMA (Biz odaya bağlanırken)
 function startCall() {
     let remoteId = document.getElementById('remote-id').value.trim().toUpperCase().replace('#', '');
     if(!remoteId) return alert("ID Giriniz");
 
-    // Medya Bağlantısı (Ses/Video)
     const call = peer.call(remoteId, localStream);
-    
-    // Veri Bağlantısı (İsim Gönderme)
     const conn = peer.connect(remoteId);
-    conn.on('open', () => {
-        conn.send({ type: 'name', name: myUsername });
-    });
+    conn.on('open', () => conn.send({ type: 'name', name: myUsername }));
 
     handleCall(call, conn);
 }
 
-// ÇAĞRI YÖNETİMİ (Ortak)
 function handleCall(call, conn = null) {
     const peerId = call.peer;
-    
-    // Eğer conn (veri bağlantısı) henüz yoksa, karşı taraf bize bağlanacaktır, bekle.
-    // Ancak biz arandıysak (cevaplayan biziz), karşıya ismimizi göndermeliyiz.
     if(!conn) {
         const backConn = peer.connect(peerId);
-        backConn.on('open', () => {
-            backConn.send({ type: 'name', name: myUsername });
-        });
+        backConn.on('open', () => backConn.send({ type: 'name', name: myUsername }));
     }
 
-    // Peer listesine ekle
-    peers[peerId] = {
-        call: call,
-        name: "Bağlanıyor...", // İsim verisi gelene kadar
-        id: peerId
-    };
+    peers[peerId] = { call: call, name: "Bağlanıyor...", id: peerId };
 
     call.on('stream', remoteStream => {
-        // Grid'e video ekle
         if(!document.getElementById(`video-${peerId}`)) {
             addVideoStream(peerId, remoteStream, peers[peerId].name, false);
             updateParticipants();
@@ -165,73 +118,142 @@ function removePeer(peerId) {
     const videoEl = document.getElementById(`video-${peerId}`);
     if(videoEl) videoEl.remove();
     updateParticipants();
-    
-    // Grid düzenini CSS otomatik yapacak ama gerekirse force redraw
 }
 
-// --- 3. UI: VİDEO GRID & KATILIMCI ---
+// --- 3. UI: GRID & VİDEO YÖNETİMİ ---
 function addVideoStream(id, stream, name, isLocal) {
-    // Wrapper Div (Kart)
     const card = document.createElement('div');
     card.className = 'video-card';
-    card.id = `video-${id}`; // Benzersiz ID
+    card.id = `video-${id}`;
 
-    // Video Elementi
+    // Video
     const video = document.createElement('video');
     video.srcObject = stream;
     video.autoplay = true;
     video.playsInline = true;
-    if(isLocal) video.muted = true; // Kendi sesimizi duymayalım
+    if(isLocal) video.muted = true;
+
+    // YENİ: BÜYÜTME (FULLSCREEN) BUTONU
+    const expandBtn = document.createElement('button');
+    expandBtn.className = 'btn-expand';
+    expandBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+    expandBtn.onclick = () => toggleFullscreenCard(card, expandBtn);
 
     // İsim Etiketi
     const nameTag = document.createElement('div');
     nameTag.className = 'name-tag';
     nameTag.innerHTML = `<i class="fa-solid fa-user"></i> <span id="name-${id}">${name}</span>`;
 
-    // Avatar (Kamera Kapalıyken)
+    // Avatar
     const avatar = document.createElement('div');
     avatar.className = 'avatar-overlay';
     avatar.innerHTML = `<div class="avatar-circle">${name.charAt(0).toUpperCase()}</div>`;
 
     card.appendChild(video);
+    card.appendChild(expandBtn); // Butonu ekle
     card.appendChild(nameTag);
     card.appendChild(avatar);
-    
-    // Grid'e ekle
     videoGrid.appendChild(card);
 
-    // Bağlantı paneli gizle, gridi göster
     document.getElementById('connect-panel').classList.add('hidden');
     document.getElementById('call-panel').classList.remove('hidden');
 
-    // Video açık/kapalı kontrolü
-    monitorVideoState(stream, card, id);
+    monitorVideoState(stream, card);
+}
+
+// Kartı Tam Ekran Yapma Mantığı
+function toggleFullscreenCard(card, btn) {
+    if (!document.fullscreenElement) {
+        card.requestFullscreen().catch(err => {
+            alert(`Hata: ${err.message}`);
+        });
+        btn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+    } else {
+        document.exitFullscreen();
+        btn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+    }
 }
 
 function updateNameTag(id, newName) {
     const el = document.getElementById(`name-${id}`);
     if(el) {
         el.innerText = newName;
-        // Avatar harfini de güncelle
         const card = document.getElementById(`video-${id}`);
-        const avatarCircle = card.querySelector('.avatar-circle');
-        if(avatarCircle) avatarCircle.innerText = newName.charAt(0).toUpperCase();
+        card.querySelector('.avatar-circle').innerText = newName.charAt(0).toUpperCase();
     }
 }
 
+// --- 4. AYARLAR VE CİHAZ YÖNETİMİ ---
+
+async function getDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const aInput = document.getElementById('audio-input-select');
+    const vInput = document.getElementById('video-input-select');
+    const aOutput = document.getElementById('audio-output-select'); // Çıkış Cihazı
+    
+    aInput.innerHTML = ""; vInput.innerHTML = ""; aOutput.innerHTML = "";
+
+    devices.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.deviceId;
+        opt.innerText = d.label || `${d.kind} (${d.deviceId.slice(0,5)}...)`;
+        
+        if(d.kind === 'audioinput') aInput.appendChild(opt);
+        else if(d.kind === 'videoinput') vInput.appendChild(opt);
+        // YENİ: Audio Output ekleme
+        else if(d.kind === 'audiooutput') aOutput.appendChild(opt);
+    });
+
+    // Eğer Audio Output bulunamadıysa (Firefox/Safari) uyarı veya gizleme yapılabilir
+    if(aOutput.options.length === 0) {
+        const opt = document.createElement('option');
+        opt.innerText = "Tarayıcı tarafından desteklenmiyor veya cihaz yok";
+        aOutput.appendChild(opt);
+        aOutput.disabled = true;
+    }
+}
+
+// YENİ: Hoparlör Değiştirme (Çıkış Cihazı)
+async function changeAudioOutput() {
+    const deviceId = document.getElementById('audio-output-select').value;
+    const videos = document.querySelectorAll('video');
+    
+    for (const video of videos) {
+        if ('setSinkId' in video) {
+            try {
+                await video.setSinkId(deviceId);
+                console.log(`Ses çıkışı ${deviceId} olarak ayarlandı.`);
+            } catch (error) {
+                console.error('Ses çıkışı değiştirilemedi:', error);
+            }
+        }
+    }
+}
+
+function changeOutputVolume(val) {
+    const videos = document.querySelectorAll('video');
+    videos.forEach(v => {
+        if(!v.muted) v.volume = val; 
+    });
+}
+
+function changeMicGain(val) {
+    const sliderVal = parseFloat(val);
+    let finalGain = 1.0;
+    if (sliderVal > 0) finalGain = 1.0 + sliderVal; 
+    else finalGain = 1.0 + sliderVal;
+    if (gainNode) gainNode.gain.value = finalGain;
+}
+
+// --- 5. YARDIMCI UI FONKSİYONLARI ---
 function updateParticipants() {
     participantList.innerHTML = "";
-    
-    // Ben
     addParticipantRow(myUsername + " (Sen)", true);
-    
-    // Diğerleri
     let count = 1;
     Object.values(peers).forEach(p => {
         addParticipantRow(p.name, false);
         count++;
     });
-    
     participantBadge.innerText = count;
 }
 
@@ -247,39 +269,7 @@ function addParticipantRow(name, isOnline) {
     participantList.appendChild(li);
 }
 
-// --- 4. GELİŞMİŞ AYARLAR (GAIN & VOLUME) ---
-
-// Hoparlör Sesi (Video elementlerinin volume'unu değiştirir)
-function changeOutputVolume(val) {
-    // Local hariç tüm videoları bul
-    const videos = document.querySelectorAll('video');
-    videos.forEach(v => {
-        if(!v.muted) v.volume = val; // Sadece remote videolar
-    });
-}
-
-// Mikrofon Hassasiyeti (Web Audio API Gain)
-function changeMicGain(val) {
-    // Slider -1 ile 1 arasında geliyor.
-    // 0 -> Gain 1.0 (Normal)
-    // 1 -> Gain 2.0 (Yüksek)
-    // -1 -> Gain 0.0 (Sessiz)
-    
-    const sliderVal = parseFloat(val);
-    let finalGain = 1.0;
-
-    if (sliderVal === 0) finalGain = 1.0;
-    else if (sliderVal > 0) finalGain = 1.0 + sliderVal; // 1.0 ile 2.0 arası
-    else finalGain = 1.0 + sliderVal; // 1.0 ile 0.0 arası (örn: -0.5 -> 0.5)
-
-    if (gainNode) {
-        gainNode.gain.value = finalGain;
-        console.log("Mikrofon Hassasiyeti:", finalGain);
-    }
-}
-
-// --- YARDIMCI FONKSİYONLAR ---
-function monitorVideoState(stream, card, id) {
+function monitorVideoState(stream, card) {
     setInterval(() => {
         const videoTrack = stream.getVideoTracks()[0];
         if(videoTrack && videoTrack.enabled && videoTrack.readyState === 'live') {
@@ -292,10 +282,8 @@ function monitorVideoState(stream, card, id) {
 
 function toggleMute() {
     if(localStream) {
-        // AudioDestination'dan çıkan ses track'ini kontrol et
         const track = localStream.getAudioTracks()[0];
         track.enabled = !track.enabled;
-        
         const btn = document.getElementById('mute-btn');
         const icon = document.getElementById('mute-icon');
         if(track.enabled) {
@@ -309,40 +297,28 @@ function toggleMute() {
 }
 
 function toggleCamera() {
-    // Orijinal ham stream'e erişmemiz lazım (localStream işlenmiş streamdir)
-    // localStream içindeki video track'ini bul
     const track = localStream.getVideoTracks()[0];
     track.enabled = !track.enabled;
-
     const btn = document.getElementById('camera-btn');
     const icon = document.getElementById('camera-icon');
-    
     if(track.enabled) {
-        btn.classList.remove('btn-secondary'); // Gri
+        btn.classList.remove('btn-secondary'); 
+        btn.classList.remove('btn-off');
         icon.classList.replace('fa-video-slash', 'fa-video');
     } else {
-        btn.classList.add('btn-secondary'); // Kapalıyken gri kalsın veya kırmızı olsun
-        btn.classList.add('btn-off'); // Kırmızı
+        btn.classList.add('btn-secondary');
+        btn.classList.add('btn-off');
         icon.classList.replace('fa-video', 'fa-video-slash');
     }
 }
 
 function endCall() {
-    // Herkesi kapat
-    Object.keys(peers).forEach(key => {
-        peers[key].call.close();
-    });
-    window.location.reload(); // En temiz çıkış
+    Object.keys(peers).forEach(key => peers[key].call.close());
+    window.location.reload();
 }
 
-// UI Panel Aç/Kapa
-function toggleParticipants() { 
-    const p = document.getElementById('participants-panel');
-    p.classList.toggle('open');
-}
-function toggleSettings() {
-    document.getElementById('settings-modal').classList.toggle('hidden');
-}
+function toggleParticipants() { document.getElementById('participants-panel').classList.toggle('open'); }
+function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); }
 function copyId() {
     navigator.clipboard.writeText(document.getElementById('my-id').innerText);
     const fb = document.getElementById('copy-feedback');
@@ -350,23 +326,6 @@ function copyId() {
     setTimeout(() => fb.style.opacity = '0', 1000);
 }
 
-// Cihaz Listeleme (Dummy Select doldurma)
-async function getDevices() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const aSelect = document.getElementById('audio-input-select');
-    const vSelect = document.getElementById('video-input-select');
-    aSelect.innerHTML = ""; vSelect.innerHTML = "";
-    
-    devices.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.deviceId;
-        opt.innerText = d.label || d.kind;
-        if(d.kind === 'audioinput') aSelect.appendChild(opt);
-        else if(d.kind === 'videoinput') vSelect.appendChild(opt);
-    });
-}
-
-// Timer
 let seconds = 0;
 setInterval(() => {
     seconds++;
