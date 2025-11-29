@@ -6,7 +6,6 @@ const participantBadge = document.getElementById('participant-badge');
 
 let isFocusMode = false;
 
-// --- EKRAN YÖNETİMİ ---
 export function showAppScreen() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');
@@ -16,8 +15,10 @@ export function showAppScreen() {
 
 export function showCallScreen() {
     document.getElementById('connect-panel').classList.add('hidden');
-    const remoteId = document.getElementById('remote-id').value || "Oda";
-    document.getElementById('footer-room-id').innerText = "#" + remoteId;
+}
+
+export function updateRoomId(id) {
+    document.getElementById('footer-room-id').innerText = "#" + id;
 }
 
 export function resetScreens() { window.location.reload(); }
@@ -25,20 +26,13 @@ export function resetScreens() { window.location.reload(); }
 export function openSettingsTab(tabName) {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-    
     document.getElementById(`tab-${tabName}`).classList.add('active');
     
-    // Butonu bulup active yap
     const btns = Array.from(document.querySelectorAll('.nav-btn'));
-    const target = btns.find(b => {
-        if(tabName === 'devices') return b.innerText.includes('Ses ve Görüntü');
-        if(tabName === 'audio') return b.innerText.includes('Ses Düzeyleri');
-        if(tabName === 'video') return b.innerText.includes('Görünüm');
-    });
+    const target = btns.find(b => b.innerText.toLowerCase().includes(tabName === 'devices' ? 'cihazlar' : (tabName === 'audio' ? 'ses' : 'video')));
     if(target) target.classList.add('active');
 }
 
-// --- VİDEO KARTI YÖNETİMİ ---
 export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
     let cardId = isLocal ? (isScreen ? 'screen-local' : 'video-local') : (isScreen ? `screen-${peerId}` : `video-${peerId}`);
     if (document.getElementById(cardId)) return;
@@ -65,6 +59,7 @@ export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
 
     const nameTag = document.createElement('div');
     nameTag.className = 'name-tag';
+    nameTag.id = `name-${cardId}`; // İsim güncellemesi için ID ekledik
     nameTag.innerHTML = name + (isScreen ? " (Ekran)" : "");
 
     if (!isScreen) {
@@ -92,14 +87,11 @@ export function removeVideoCard(peerId, isScreen = false) {
     let cardId = (peerId === 'local') ? (isScreen ? 'screen-local' : 'video-local') : (isScreen ? `screen-${peerId}` : `video-${peerId}`);
     const card = document.getElementById(cardId);
     if (card) {
-        if (card.classList.contains('featured')) {
-            exitFocusMode();
-        }
+        if (card.classList.contains('featured')) exitFocusMode();
         card.remove();
     }
 }
 
-// --- FILMSTRIP MANTIĞI ---
 function toggleFocusMode(selectedCard) {
     if (!isFocusMode) {
         isFocusMode = true;
@@ -123,13 +115,9 @@ function toggleFocusMode(selectedCard) {
             btn.innerHTML = '<i class="fa-solid fa-compress"></i>';
             btn.onclick = (e) => { e.stopPropagation(); exitFocusMode(); };
         }
-
     } else {
-        if(selectedCard.classList.contains('featured')) {
-            exitFocusMode();
-        } else {
-            swapFeatured(selectedCard);
-        }
+        if(selectedCard.classList.contains('featured')) exitFocusMode();
+        else swapFeatured(selectedCard);
     }
 }
 
@@ -184,7 +172,6 @@ function swapFeatured(newCard) {
     }
 }
 
-// --- YARDIMCILAR ---
 export function setLocalMirror(isMirrored) {
     state.isMirrored = isMirrored;
     const v = document.querySelector('#video-local video');
@@ -202,7 +189,7 @@ export function updateParticipantsUI() {
 function addParticipantRow(name, isMe) {
     const li = document.createElement('li');
     li.innerHTML = `
-        <div style="width:32px; height:32px; border-radius:50%; background:${isMe ? '#5865F2' : '#faa61a'}; color:white; display:flex; justify-content:center; align-items:center; font-weight:bold;">${name.charAt(0).toUpperCase()}</div>
+        <div class="user-avatar" style="background-color: ${isMe ? '#5865F2' : '#faa61a'}; width:32px; height:32px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold;">${name.charAt(0).toUpperCase()}</div>
         <span style="font-weight: 500; font-size: 0.9rem;">${name}</span>
     `;
     participantList.appendChild(li);
@@ -214,8 +201,20 @@ export function updateMyId(id) {
 }
 
 export function updateNameTag(peerId, name) {
-    const el = document.getElementById(`name-video-${peerId}`);
-    if(el) el.innerHTML = name;
+    // Video etiketi
+    let el = document.getElementById(`name-video-${peerId}`);
+    if(el) el.innerText = name;
+    
+    // Ekran etiketi
+    el = document.getElementById(`name-screen-${peerId}`);
+    if(el) el.innerText = name + " (Ekran)";
+    
+    // Avatar
+    const card = document.getElementById(`video-${peerId}`);
+    if(card) {
+        const av = card.querySelector('.avatar-circle');
+        if(av) av.innerText = name.charAt(0).toUpperCase();
+    }
 }
 
 function monitorVideoState(stream, card) {

@@ -13,7 +13,7 @@
     <div id="login-screen" class="login-overlay">
         <div class="login-card">
             <div class="login-header">
-                <i class="fa-solid fa-video logo-icon"></i>
+                <i class="fa-brands fa-discord logo-icon"></i>
                 <h2>PasamCord</h2>
             </div>
             <p class="login-desc">Sohbete katılmak için bir kimlik belirleyin.</p>
@@ -46,8 +46,7 @@
         </div>
 
         <div class="video-stage" id="video-stage">
-            <div class="video-grid" id="video-grid">
-                </div>
+            <div class="video-grid" id="video-grid"></div>
         </div>
 
         <div class="bottom-bar">
@@ -100,71 +99,49 @@
 
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="settings-container">
-            
             <div class="settings-sidebar">
                 <div class="settings-header-text">AYARLAR</div>
                 <button class="nav-btn active" onclick="window.openTab('devices')">Ses ve Görüntü</button>
                 <button class="nav-btn" onclick="window.openTab('audio')">Ses Düzeyleri</button>
                 <button class="nav-btn" onclick="window.openTab('video')">Görünüm</button>
             </div>
-
             <div class="settings-content">
                 <button class="close-modal-x" onclick="window.toggleSettings()">&times;</button>
-
+                
                 <div id="tab-devices" class="tab-pane active">
                     <h3 class="tab-title">Cihaz Ayarları</h3>
-                    
                     <div class="form-group">
                         <label>Mikrofon</label>
-                        <div class="custom-select">
-                            <select id="audio-input-select" onchange="window.changeAudioInput()"></select>
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
+                        <div class="custom-select"><select id="audio-input-select" onchange="window.changeAudioInput()"></select><i class="fa-solid fa-chevron-down"></i></div>
                     </div>
-
                     <div class="form-group">
                         <label>Kamera</label>
-                        <div class="custom-select">
-                            <select id="video-input-select" onchange="window.changeVideoInput()"></select>
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
+                        <div class="custom-select"><select id="video-input-select" onchange="window.changeVideoInput()"></select><i class="fa-solid fa-chevron-down"></i></div>
                     </div>
-
                     <div class="form-group">
                         <label>Çıkış Cihazı (Hoparlör)</label>
-                        <div class="custom-select">
-                            <select id="audio-output-select" onchange="window.changeAudioOutput()"></select>
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-                        <p class="hint">*Tarayıcı destekliyorsa çalışır.</p>
+                        <div class="custom-select"><select id="audio-output-select" onchange="window.changeAudioOutput()"></select><i class="fa-solid fa-chevron-down"></i></div>
                     </div>
                 </div>
 
                 <div id="tab-audio" class="tab-pane">
                     <h3 class="tab-title">Ses Kontrolleri</h3>
-                    
                     <div class="form-group">
-                        <label>Gelen Ses Şiddeti (Hoparlör)</label>
+                        <label>Gelen Ses Şiddeti</label>
                         <input type="range" class="styled-slider" min="0" max="1" step="0.1" value="1" oninput="window.changeOutputVolume(this.value)">
                     </div>
-
                     <div class="form-group">
-                        <label>Mikrofon Hassasiyeti (Gain)</label>
-                        <div class="slider-labels">
-                            <span>Düşük</span><span>Normal</span><span>Yüksek</span>
-                        </div>
+                        <label>Mikrofon Hassasiyeti</label>
                         <input type="range" class="styled-slider" min="-1" max="1" step="0.1" value="0" oninput="window.changeMicGain(this.value)">
-                        <p class="hint">Sesiniz az gidiyorsa yükseltin.</p>
                     </div>
                 </div>
 
                 <div id="tab-video" class="tab-pane">
                     <h3 class="tab-title">Görünüm Ayarları</h3>
-                    
                     <div class="form-group row-group">
                         <div class="text-group">
                             <label>Kamerayı Aynala</label>
-                            <p class="hint">Kendi önizlemenizi ayna gibi ters çevirir.</p>
+                            <p class="hint">Önizlemenizi ters çevirir.</p>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="mirror-check" checked onchange="window.toggleMirrorSetting(this.checked)">

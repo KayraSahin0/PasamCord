@@ -1,62 +1,24 @@
-:root {
-    --bg-main: #000000;
-    --footer-bg: #121212;
-    --card-bg: #1a1a1a;
-    --modal-bg: #2b2d31;
-    --sidebar-bg: #1e1f22;
-    --primary: #ffffff;
-    --accent: #5865F2;
-    --danger: #ed4245;
-    --success: #23a559;
-    --text-muted: #949ba4;
-    --border-radius: 12px;
-}
-
-body {
-    font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background-color: var(--bg-main);
-    color: var(--primary);
-    margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column;
-}
-
-/* --- GENEL --- */
+:root { --bg-main: #000000; --footer-bg: #121212; --card-bg: #1a1a1a; --modal-bg: #2b2d31; --sidebar-bg: #1e1f22; --primary: #ffffff; --accent: #5865F2; --danger: #ed4245; --success: #23a559; --text-muted: #949ba4; --border-radius: 12px; }
+body { font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: var(--bg-main); color: var(--primary); margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; height: 100%; width: 100%; position: relative; }
 .hidden { display: none !important; }
-
-/* --- VİDEO ALANI --- */
-.video-stage {
-    flex-grow: 1; position: relative; background-color: var(--bg-main);
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden; width: 100%; height: calc(100% - 80px);
-}
-.video-grid {
-    display: grid; gap: 15px; width: 100%; height: 100%; padding: 20px; box-sizing: border-box;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    grid-auto-rows: minmax(300px, 1fr);
-    align-content: center; justify-content: center;
-}
+.video-stage { flex-grow: 1; position: relative; background-color: var(--bg-main); display: flex; align-items: center; justify-content: center; overflow: hidden; width: 100%; height: calc(100% - 80px); }
+.video-grid { display: grid; gap: 15px; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); grid-auto-rows: minmax(300px, 1fr); align-content: center; justify-content: center; }
 .video-grid.focus-mode { display: block; padding: 0; position: relative; }
-
-/* KARTLAR */
 .video-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; position: relative; width: 100%; height: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 .video-card video { width: 100%; height: 100%; object-fit: cover; background: #000; }
 .video-card video.mirrored { transform: scaleX(-1); }
 .video-card.featured { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; border-radius: 0; }
-
 .name-tag { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 4px; font-size: 0.9rem; font-weight: 500; pointer-events: none; }
 .btn-expand { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: 2px solid white; font-size: 1.2rem; cursor: pointer; opacity: 0; transition: 0.2s; z-index: 10; }
 .video-card:hover .btn-expand { opacity: 1; }
 .avatar-overlay { position: absolute; inset: 0; background: var(--card-bg); display: flex; justify-content: center; align-items: center; z-index: 2; }
 .avatar-circle { width: 80px; height: 80px; background: #333; color: white; border-radius: 50%; font-size: 2.5rem; display: flex; justify-content: center; align-items: center; }
 .video-active .avatar-overlay { display: none; }
-
-/* Filmstrip (Yüzen) */
 .filmstrip-overlay { position: absolute; bottom: 20px; right: 20px; z-index: 100; display: flex; gap: 10px; max-width: 80%; overflow-x: auto; padding: 10px; scrollbar-width: none; }
 .filmstrip-overlay::-webkit-scrollbar { display: none; }
 .filmstrip-overlay .video-card { width: 240px; height: 135px; flex-shrink: 0; background: #000; border: 2px solid #333; border-radius: 8px; cursor: pointer; transition: transform 0.2s; }
 .filmstrip-overlay .video-card:hover { transform: translateY(-5px); border-color: var(--primary); }
-
-/* --- FOOTER --- */
 .bottom-bar { height: 80px; background-color: var(--footer-bg); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; border-top: 1px solid #222; z-index: 200; position: relative; }
 .footer-left { display: flex; align-items: center; gap: 15px; font-family: monospace; font-size: 1.1rem; color: #ccc; min-width: 200px; }
 .room-id-tag { font-weight: bold; color: white; letter-spacing: 1px; }
@@ -71,83 +33,46 @@ body {
 .footer-right { display: flex; gap: 20px; align-items: center; justify-content: flex-end; min-width: 200px; }
 .icon-btn { background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer; position: relative; }
 .badge { position: absolute; top: -5px; right: -5px; font-size: 0.7rem; background: var(--danger); padding: 2px 5px; border-radius: 10px; }
-
-/* --- SIDEBAR (KATILIMCILAR) - DÜZELTİLDİ --- */
-.side-panel {
-    position: fixed;       /* Sayfadan bağımsız sabitle */
-    top: 0;
-    right: -320px;         /* Başlangıçta sağa gizle */
-    width: 300px;
-    height: calc(100% - 80px); /* Footer'ın üstünde bitir */
-    background: #1e1e1e;   /* Panel rengi */
-    border-left: 1px solid #333;
-    z-index: 300;          /* Videoların üstünde */
-    transition: right 0.3s ease-in-out; /* Kayma efekti */
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-}
-
-.side-panel.open {
-    right: 0; /* Açılınca sağa yapış */
-}
-
+.side-panel { position: fixed; top: 0; right: -320px; width: 300px; height: calc(100% - 80px); background: #1e1e1e; border-left: 1px solid #333; z-index: 300; transition: right 0.3s ease-in-out; display: flex; flex-direction: column; padding: 0; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
+.side-panel.open { right: 0; }
 .panel-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; background: #252525; }
 .panel-content { padding: 10px; overflow-y: auto; flex-grow: 1; }
 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #aaa; }
 .user-list li { padding: 15px 10px; border-bottom: 1px solid #2f2f2f; display: flex; align-items: center; gap: 15px; }
-
-/* --- YENİ AYARLAR MODALI --- */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
 .settings-container { display: flex; width: 800px; height: 550px; background: var(--modal-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
-
-/* Sidebar */
 .settings-sidebar { width: 220px; background: var(--sidebar-bg); padding: 20px 10px; display: flex; flex-direction: column; }
 .settings-header-text { padding: 0 10px 15px; font-size: 0.75rem; font-weight: bold; color: var(--text-muted); letter-spacing: 1px; }
 .nav-btn { background: transparent; border: none; color: #b5bac1; padding: 12px 16px; text-align: left; cursor: pointer; border-radius: 4px; font-size: 0.95rem; margin-bottom: 4px; transition: 0.2s; }
 .nav-btn:hover { background: #35373c; color: #dbdee1; }
 .nav-btn.active { background: #404249; color: #fff; font-weight: 500; }
-
-/* İçerik Alanı */
 .settings-content { flex: 1; padding: 30px 40px; position: relative; overflow-y: auto; display: flex; flex-direction: column; }
 .close-modal-x { position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; transition: 0.2s; }
 .close-modal-x:hover { color: #fff; }
 .tab-pane { display: none; flex-grow: 1; }
 .tab-pane.active { display: block; animation: fadeIn 0.2s ease-out; }
 .tab-title { margin-top: 0; margin-bottom: 25px; font-size: 1.2rem; color: #fff; }
-
 .form-group { margin-bottom: 25px; }
 .form-group.row-group { display: flex; justify-content: space-between; align-items: center; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: #b5bac1; text-transform: uppercase; }
 .hint { font-size: 0.8rem; color: var(--text-muted); margin: 5px 0 0; }
-
-/* Select Box */
 .custom-select { position: relative; width: 100%; }
 .custom-select select { width: 100%; padding: 12px; background: #1e1f22; border: none; border-radius: 4px; color: #dbdee1; appearance: none; font-size: 1rem; cursor: pointer; }
 .custom-select select:focus { outline: 2px solid var(--accent); }
 .custom-select i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #b5bac1; pointer-events: none; }
-
-/* Slider */
 .styled-slider { width: 100%; height: 6px; background: #4e5058; border-radius: 3px; -webkit-appearance: none; outline: none; margin-top: 10px; }
 .styled-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #fff; border-radius: 50%; cursor: pointer; transition: 0.2s; }
 .styled-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
 .slider-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; }
-
-/* Toggle Switch */
 .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .toggle-switch .slider { position: absolute; cursor: pointer; inset: 0; background-color: #80848e; transition: .3s; border-radius: 34px; }
 .toggle-switch .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
 .toggle-switch input:checked + .slider { background-color: var(--success); }
 .toggle-switch input:checked + .slider:before { transform: translateX(20px); }
-
-/* Footer Butonu */
 .settings-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid #3f4147; text-align: right; }
 .btn-save { background-color: var(--accent); color: white; border: none; padding: 10px 24px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: 0.2s; }
 .btn-save:hover { background-color: #4752c4; }
-
-/* Diğerleri */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .login-overlay { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; justify-content: center; align-items: center; }
 .login-card { background: var(--card-bg); padding: 40px; border-radius: 12px; width: 350px; text-align: center; border: 1px solid #333; }
@@ -159,3 +84,4 @@ body {
 .id-display { background: #333; padding: 10px 15px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 .btn-join { padding: 10px 20px; background: white; color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
 #remote-id { padding: 10px; background: #111; border: 1px solid #333; color: white; border-radius: 5px; }
+.close-modal-mobile { display: none; }
