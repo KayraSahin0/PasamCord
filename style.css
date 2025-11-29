@@ -1,0 +1,127 @@
+:root {
+    --bg-color: #23272a;
+    --card-bg: #2c2f33;
+    --primary: #5865F2;
+    --primary-hover: #4752c4;
+    --success: #3ba55c;
+    --danger: #ed4245;
+    --text-main: #ffffff;
+    --text-muted: #99aab5;
+    --input-bg: #202225;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* --- Login Overlay --- */
+.login-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg-color);
+    z-index: 2000;
+    display: flex; justify-content: center; align-items: center;
+}
+.login-card {
+    background: var(--card-bg); width: 300px; padding: 40px;
+    border-radius: 10px; text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* --- Ana Kart --- */
+.main-card {
+    background-color: var(--card-bg);
+    width: 340px;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+    text-align: center;
+}
+
+.header { margin-bottom: 25px; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.header h2 { margin: 0; font-weight: 800; letter-spacing: 1px; }
+.logo-icon { font-size: 1.8rem; }
+
+.welcome-text { margin-bottom: 15px; font-weight: 600; }
+
+/* ID ve Input */
+.label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
+.id-box {
+    background: var(--input-bg); padding: 15px; border-radius: 8px;
+    font-family: 'Courier New', monospace; font-size: 1.5rem; font-weight: bold;
+    cursor: pointer; border: 1px solid #23272a; transition: 0.3s;
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+}
+.id-box:hover { border-color: var(--primary); }
+input {
+    width: 100%; padding: 15px; background: var(--input-bg); border: 1px solid transparent;
+    border-radius: 5px; color: white; font-size: 1rem; text-align: center; outline: none; box-sizing: border-box; margin-bottom: 15px;
+}
+input:focus { border-color: var(--primary); }
+
+/* Standart Butonlar */
+.btn { width: 100%; padding: 15px; border: none; border-radius: 5px; font-size: 1rem; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+.btn-call { background-color: var(--primary); }
+.btn-call:hover { background-color: var(--primary-hover); }
+
+/* --- Görüşme Kontrolleri (Yuvarlak Butonlar) --- */
+.control-buttons {
+    display: flex; justify-content: center; gap: 20px; margin-top: 25px;
+}
+.btn-circle {
+    width: 60px; height: 60px; border-radius: 50%; border: none;
+    font-size: 1.5rem; cursor: pointer; color: white; transition: 0.3s;
+    display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Mute Butonu */
+.btn-mute { background-color: #4f545c; } /* Varsayılan Gri */
+.btn-mute:hover { background-color: #686d73; }
+.btn-mute.muted { background-color: var(--danger); color: white; box-shadow: 0 0 10px rgba(237, 66, 69, 0.6); }
+
+/* Hangup Butonu */
+.btn-hangup-circle { background-color: var(--danger); }
+.btn-hangup-circle:hover { background-color: #c03537; }
+
+/* Call Screen Efektleri */
+.pulse-ring {
+    width: 80px; height: 80px; border-radius: 50%; background: var(--input-bg);
+    margin: 10px auto; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--success);
+    box-shadow: 0 0 15px rgba(59, 165, 92, 0.5);
+    animation: pulse 2s infinite;
+}
+.user-icon { font-size: 1.5rem; color: var(--success); }
+.timer { font-family: monospace; font-size: 1.2rem; color: var(--text-muted); margin: 5px 0; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 165, 92, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(59, 165, 92, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 165, 92, 0); } }
+
+/* Footer */
+.footer-status { margin-top: 20px; font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: center; align-items: center; gap: 6px; }
+.dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; }
+.yellow { background-color: #faa61a; } .green { background-color: var(--success); } .red { background-color: var(--danger); }
+.hidden { display: none !important; }
+
+/* Modal */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); z-index: 3000;
+    display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px);
+}
+.modal-content {
+    background: var(--card-bg); padding: 30px; border-radius: 10px; text-align: center; width: 300px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: slideIn 0.3s ease;
+}
+.modal-icon { font-size: 2.5rem; color: var(--text-muted); margin-bottom: 15px; animation: ring 1s infinite; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-modal { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.btn-accept { background-color: var(--success); }
+.btn-reject { background-color: var(--danger); }
+@keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes ring { 0% { transform: rotate(0deg); } 25% { transform: rotate(15deg); } 75% { transform: rotate(-15deg); } 100% { transform: rotate(0deg); } }
