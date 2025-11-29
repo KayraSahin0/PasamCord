@@ -1,11 +1,13 @@
-// state.js
 export const state = {
     myUsername: "Misafir",
     localStream: null,
     peer: null,
-    peers: {}, // Bağlı olan diğer kullanıcılar
+    peers: {}, 
     
-    // Audio Context Elemanları
+    // YENİ: Tüm odadaki kişilerin senkronize listesi
+    participantList: [],
+
+    // Audio Context
     audioContext: null,
     gainNode: null,
     micSource: null,
@@ -13,5 +15,6 @@ export const state = {
 
     // Durumlar
     isMuted: false,
-    isCameraOff: true // Varsayılan olarak kamera kapalı
+    isCameraOff: true,
+    isDeafened: false
 };
