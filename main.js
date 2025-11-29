@@ -11,6 +11,7 @@ window.loginUser = async function() {
     if(success) {
         UI.showAppScreen();
         Network.initPeer();
+        startTimer();
     }
 };
 
@@ -33,11 +34,9 @@ window.toggleMute = function() {
     const btn = document.getElementById('mute-btn');
     const icon = document.getElementById('mute-icon');
     if (state.isMuted) {
-        btn.classList.add('btn-off');
-        icon.classList.replace('fa-microphone', 'fa-microphone-slash');
+        btn.classList.add('btn-off'); icon.classList.replace('fa-microphone', 'fa-microphone-slash');
     } else {
-        btn.classList.remove('btn-off');
-        icon.classList.replace('fa-microphone-slash', 'fa-microphone');
+        btn.classList.remove('btn-off'); icon.classList.replace('fa-microphone-slash', 'fa-microphone');
     }
 };
 
@@ -49,22 +48,24 @@ window.toggleCamera = function() {
     const btn = document.getElementById('camera-btn');
     const icon = document.getElementById('camera-icon');
     if (state.isCameraOff) {
-        btn.classList.add('btn-off');
-        icon.classList.replace('fa-video', 'fa-video-slash');
+        btn.classList.add('btn-off'); icon.classList.replace('fa-video', 'fa-video-slash');
     } else {
-        btn.classList.remove('btn-off');
-        icon.classList.replace('fa-video-slash', 'fa-video');
+        btn.classList.remove('btn-off'); icon.classList.replace('fa-video-slash', 'fa-video');
     }
 };
 
 window.toggleDeafen = function() {
     state.isDeafened = !state.isDeafened;
     document.querySelectorAll('video').forEach(v => {
-        if (v.id !== 'video-local' && v.id !== 'screen-local') v.muted = state.isDeafened;
+        if (!v.closest('#video-local') && !v.closest('#screen-local')) v.muted = state.isDeafened;
     });
     const btn = document.getElementById('deafen-btn');
-    if(state.isDeafened) btn.classList.add('btn-off');
-    else btn.classList.remove('btn-off');
+    const icon = document.getElementById('deafen-icon');
+    if (state.isDeafened) {
+        btn.classList.add('btn-off'); icon.classList.replace('fa-headphones', 'fa-ear-deaf');
+    } else {
+        btn.classList.remove('btn-off'); icon.classList.replace('fa-ear-deaf', 'fa-headphones');
+    }
 };
 
 window.toggleScreenShare = async function() {
@@ -93,10 +94,17 @@ window.toggleScreenShare = async function() {
     }
 };
 
+// AYARLAR İŞLEVLERİ (GERÇEK ZAMANLI)
 window.changeOutputVolume = (val) => Audio.setOutputVolume(val);
 window.changeMicGain = (val) => Audio.setMicGain(val);
-window.changeAudioInput = () => {}; 
-window.changeVideoInput = () => {};
+window.changeAudioInput = () => {
+    const id = document.getElementById('audio-input-select').value;
+    Audio.switchAudioInput(id);
+};
+window.changeVideoInput = () => {
+    const id = document.getElementById('video-input-select').value;
+    Audio.switchVideoInput(id);
+};
 window.changeAudioOutput = async () => {
     const deviceId = document.getElementById('audio-output-select').value;
     const videos = document.querySelectorAll('video');
@@ -115,3 +123,14 @@ window.copyId = () => {
     fb.style.opacity = '1'; fb.classList.remove('fade-out');
     setTimeout(() => { fb.style.opacity = '0'; fb.classList.add('fade-out'); }, 1000);
 };
+
+function startTimer() {
+    let sec = 0;
+    setInterval(() => {
+        sec++;
+        const m = Math.floor(sec/60).toString().padStart(2,'0');
+        const s = (sec%60).toString().padStart(2,'0');
+        const el = document.getElementById('call-timer');
+        if(el) el.innerText = `${m}:${s}`;
+    }, 1000);
+}
