@@ -1,4 +1,3 @@
-// audio.js
 import { state } from './state.js';
 import { addVideoCard } from './ui.js';
 
@@ -6,38 +5,36 @@ export async function initAudioVideo() {
     try {
         const rawStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
-        // --- WEB AUDIO API (Ses Motoru) ---
+        // Web Audio API
         state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         state.micSource = state.audioContext.createMediaStreamSource(rawStream);
         state.gainNode = state.audioContext.createGain();
-        state.gainNode.gain.value = 1.0; // Varsayılan ses
+        state.gainNode.gain.value = 1.0;
         state.audioDestination = state.audioContext.createMediaStreamDestination();
 
-        // Bağlantı: Mikrofon -> Gain (Ses Ayarı) -> Hedef
         state.micSource.connect(state.gainNode);
         state.gainNode.connect(state.audioDestination);
 
-        // PeerJS'e gidecek birleştirilmiş stream
+        // İşlenmiş stream oluştur
         state.localStream = new MediaStream([
             rawStream.getVideoTracks()[0],
             state.audioDestination.stream.getAudioTracks()[0]
         ]);
 
-        // KAMERA KAPALI BAŞLASIN
+        // KAMERA KAPALI BAŞLA
         const videoTrack = state.localStream.getVideoTracks()[0];
         videoTrack.enabled = false;
         state.isCameraOff = true;
 
-        // UI'a kendi videomuzu ekleyelim
+        // UI Ekle
         addVideoCard('local', state.localStream, state.myUsername, true);
 
-        // Cihazları Listele
         await populateDeviceLists();
-
         return true;
+
     } catch (err) {
         console.error("Medya Hatası:", err);
-        alert("Kamera ve Mikrofon izni vermelisiniz!");
+        alert("Kamera ve mikrofon izni verilmedi.");
         return false;
     }
 }
@@ -53,7 +50,7 @@ export async function populateDeviceLists() {
     devices.forEach(d => {
         const opt = document.createElement('option');
         opt.value = d.deviceId;
-        opt.innerText = d.label || `${d.kind} (${d.deviceId.slice(0,5)}...)`;
+        opt.innerText = d.label || d.kind;
         
         if (d.kind === 'audioinput') aInput.appendChild(opt);
         else if (d.kind === 'videoinput') vInput.appendChild(opt);
@@ -62,18 +59,16 @@ export async function populateDeviceLists() {
 
     if(aOutput.options.length === 0) {
         const opt = document.createElement('option');
-        opt.innerText = "Desteklenmiyor / Cihaz Yok";
+        opt.innerText = "Cihaz Yok / Tarayıcı Desteklemiyor";
         aOutput.appendChild(opt);
     }
 }
 
 export function setMicGain(val) {
-    const sliderVal = parseFloat(val);
-    // -1 (Sessiz) ile 1 (x2 Ses) arası
-    let finalGain = sliderVal > 0 ? (1.0 + sliderVal) : (1.0 + sliderVal);
-    if(finalGain < 0) finalGain = 0;
-    
-    if (state.gainNode) state.gainNode.gain.value = finalGain;
+    const v = parseFloat(val);
+    let g = v > 0 ? (1.0 + v) : (1.0 + v);
+    if(g < 0) g = 0;
+    if (state.gainNode) state.gainNode.gain.value = g;
 }
 
 export function setOutputVolume(val) {

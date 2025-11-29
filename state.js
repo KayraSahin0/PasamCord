@@ -1,10 +1,11 @@
 export const state = {
     myUsername: "Misafir",
     localStream: null,
+    localScreenStream: null,
     peer: null,
     peers: {}, 
     
-    // YENİ: Tüm odadaki kişilerin senkronize listesi
+    // Katılımcı Senkronizasyonu
     participantList: [],
 
     // Audio Context
@@ -15,6 +16,7 @@ export const state = {
 
     // Durumlar
     isMuted: false,
-    isCameraOff: true,
-    isDeafened: false
+    isCameraOff: true,  // Varsayılan KAPALI
+    isDeafened: false,
+    isScreenSharing: false
 };
