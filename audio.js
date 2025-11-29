@@ -5,7 +5,6 @@ export async function initAudioVideo() {
     try {
         const rawStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
-        // Web Audio API
         state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         state.micSource = state.audioContext.createMediaStreamSource(rawStream);
         state.gainNode = state.audioContext.createGain();
@@ -15,18 +14,16 @@ export async function initAudioVideo() {
         state.micSource.connect(state.gainNode);
         state.gainNode.connect(state.audioDestination);
 
-        // İşlenmiş stream oluştur
         state.localStream = new MediaStream([
             rawStream.getVideoTracks()[0],
             state.audioDestination.stream.getAudioTracks()[0]
         ]);
 
-        // KAMERA KAPALI BAŞLA
+        // Kamera kapalı başla
         const videoTrack = state.localStream.getVideoTracks()[0];
         videoTrack.enabled = false;
         state.isCameraOff = true;
 
-        // UI Ekle
         addVideoCard('local', state.localStream, state.myUsername, true);
 
         await populateDeviceLists();
@@ -34,7 +31,7 @@ export async function initAudioVideo() {
 
     } catch (err) {
         console.error("Medya Hatası:", err);
-        alert("Kamera ve mikrofon izni verilmedi.");
+        alert("Kamera/Mikrofon izni gerekli!");
         return false;
     }
 }
@@ -51,15 +48,13 @@ export async function populateDeviceLists() {
         const opt = document.createElement('option');
         opt.value = d.deviceId;
         opt.innerText = d.label || d.kind;
-        
         if (d.kind === 'audioinput') aInput.appendChild(opt);
         else if (d.kind === 'videoinput') vInput.appendChild(opt);
         else if (d.kind === 'audiooutput') aOutput.appendChild(opt);
     });
-
     if(aOutput.options.length === 0) {
         const opt = document.createElement('option');
-        opt.innerText = "Cihaz Yok / Tarayıcı Desteklemiyor";
+        opt.innerText = "Cihaz Yok/Desteklenmiyor";
         aOutput.appendChild(opt);
     }
 }

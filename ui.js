@@ -4,31 +4,37 @@ const videoGrid = document.getElementById('video-grid');
 const participantList = document.getElementById('participant-list');
 const participantBadge = document.getElementById('participant-badge');
 
+let isFocusMode = false;
+
+// --- EKRAN YÖNETİMİ ---
 export function showAppScreen() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');
     document.getElementById('display-username').innerText = state.myUsername;
+    startClock();
 }
 
 export function showCallScreen() {
     document.getElementById('connect-panel').classList.add('hidden');
-    document.getElementById('call-panel').classList.remove('hidden');
+    const remoteId = document.getElementById('remote-id').value || "Oda";
+    document.getElementById('footer-room-id').innerText = "#" + remoteId;
 }
 
-export function resetScreens() {
-    window.location.reload();
+export function resetScreens() { window.location.reload(); }
+
+export function openSettingsTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    
+    const btns = Array.from(document.querySelectorAll('.tab-btn'));
+    const target = btns.find(b => b.innerText.toLowerCase().includes(tabName === 'devices' ? 'cihazlar' : (tabName === 'audio' ? 'ses' : 'video')));
+    if(target) target.classList.add('active');
 }
 
 // --- VİDEO KARTI EKLEME ---
 export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
-    // ID Oluşturma: Kamera için 'video-ID', Ekran için 'screen-ID'
-    let cardId;
-    if (isLocal) {
-        cardId = isScreen ? 'screen-local' : 'video-local';
-    } else {
-        cardId = isScreen ? `screen-${peerId}` : `video-${peerId}`;
-    }
-
+    let cardId = isLocal ? (isScreen ? 'screen-local' : 'video-local') : (isScreen ? `screen-${peerId}` : `video-${peerId}`);
     if (document.getElementById(cardId)) return;
 
     const card = document.createElement('div');
@@ -40,30 +46,21 @@ export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
     video.autoplay = true;
     video.playsInline = true;
 
-    // Ses Kontrolü
-    if (isLocal) {
-        video.muted = true; 
-    } else {
-        // Ekran paylaşımında ses varsa ve sağırlaştırma kapalıysa ses gelir
-        if (state.isDeafened) video.muted = true;
-        else video.muted = false;
-    }
+    if (isLocal && !isScreen && state.isMirrored) video.classList.add('mirrored');
 
-    // Büyütme Butonu
+    if (isLocal) video.muted = true;
+    else if (state.isDeafened) video.muted = true;
+    else video.muted = false;
+
     const expandBtn = document.createElement('button');
-    expandBtn.style.cssText = "position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; z-index:20;";
+    expandBtn.className = 'btn-expand';
     expandBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
-    expandBtn.onclick = () => toggleFullscreenCard(card, expandBtn);
-
-    // İsim Etiketi
-    const displayName = isScreen ? `${name} (Ekran)` : name;
-    const iconClass = isScreen ? 'fa-desktop' : 'fa-user';
+    expandBtn.onclick = (e) => { e.stopPropagation(); toggleFocusMode(card); };
 
     const nameTag = document.createElement('div');
     nameTag.className = 'name-tag';
-    nameTag.innerHTML = `<i class="fa-solid ${iconClass}"></i> <span id="name-${cardId}">${displayName}</span>`;
+    nameTag.innerHTML = name + (isScreen ? " (Ekran)" : "");
 
-    // Avatar (Sadece kamera ise ve kapalıysa görünür)
     if (!isScreen) {
         const avatar = document.createElement('div');
         avatar.className = 'avatar-overlay';
@@ -72,83 +69,164 @@ export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
     }
 
     card.append(video, expandBtn, nameTag);
-    videoGrid.appendChild(card);
 
-    if (isScreen) {
-        card.classList.add('video-active'); // Ekran hep aktiftir
+    // EĞER FOCUS MODE AÇIKSA YENİ GELENİ SAĞ ALTA EKLE
+    const strip = document.getElementById('filmstrip-overlay');
+    if (isFocusMode && strip) {
+        strip.appendChild(card);
+        card.onclick = () => swapFeatured(card); // Tıklanınca yer değiştirsin
     } else {
-        monitorVideoState(stream, card);
+        videoGrid.appendChild(card);
     }
+
+    if (isScreen) card.classList.add('video-active');
+    else monitorVideoState(stream, card);
 }
 
 export function removeVideoCard(peerId, isScreen = false) {
-    let cardId;
-    // Eğer peerId 'local' ise özel işlem
-    if(peerId === 'local') {
-        cardId = isScreen ? 'screen-local' : 'video-local';
-    } else {
-        cardId = isScreen ? `screen-${peerId}` : `video-${peerId}`;
-    }
-
+    let cardId = (peerId === 'local') ? (isScreen ? 'screen-local' : 'video-local') : (isScreen ? `screen-${peerId}` : `video-${peerId}`);
     const card = document.getElementById(cardId);
-    if (card) card.remove();
+    if (card) {
+        // Eğer silinen kart "Featured" ise modu kapat
+        if (card.classList.contains('featured')) {
+            exitFocusMode();
+        }
+        card.remove();
+    }
 }
 
-// --- KATILIMCI LİSTESİ ---
+// --- FİLM ŞERİDİ (SAĞ ALT KÖŞE) ---
+function toggleFocusMode(selectedCard) {
+    if (!isFocusMode) {
+        // MODU AÇ
+        isFocusMode = true;
+        videoGrid.classList.add('focus-mode');
+        selectedCard.classList.add('featured');
+
+        // Sağ Alt Konteyneri Oluştur
+        let strip = document.createElement('div');
+        strip.id = 'filmstrip-overlay';
+        strip.className = 'filmstrip-overlay';
+        document.getElementById('video-stage').appendChild(strip);
+
+        // Seçilmeyenleri oraya taşı
+        Array.from(videoGrid.children).forEach(child => {
+            if (child.classList.contains('video-card') && !child.classList.contains('featured')) {
+                strip.appendChild(child);
+                child.onclick = () => swapFeatured(child);
+            }
+        });
+
+        // Buton ikonunu değiştir
+        const btn = selectedCard.querySelector('.btn-expand');
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+            btn.onclick = (e) => { e.stopPropagation(); exitFocusMode(); };
+        }
+
+    } else {
+        // Zaten açıksa kapat
+        if(selectedCard.classList.contains('featured')) {
+            exitFocusMode();
+        } else {
+            swapFeatured(selectedCard);
+        }
+    }
+}
+
+function exitFocusMode() {
+    isFocusMode = false;
+    videoGrid.classList.remove('focus-mode');
+    
+    const featuredCard = videoGrid.querySelector('.featured');
+    if(featuredCard) {
+        featuredCard.classList.remove('featured');
+        featuredCard.onclick = null;
+        const btn = featuredCard.querySelector('.btn-expand');
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            btn.onclick = (e) => { e.stopPropagation(); toggleFocusMode(featuredCard); };
+        }
+    }
+
+    const strip = document.getElementById('filmstrip-overlay');
+    if (strip) {
+        // Hepsini geri grid'e taşı
+        while(strip.firstChild) {
+            const c = strip.firstChild;
+            videoGrid.appendChild(c);
+            c.onclick = null;
+        }
+        strip.remove();
+    }
+}
+
+function swapFeatured(newCard) {
+    const strip = document.getElementById('filmstrip-overlay');
+    const currentFeatured = videoGrid.querySelector('.featured');
+
+    if (currentFeatured && strip) {
+        // Eskiyi küçült, şeride at
+        currentFeatured.classList.remove('featured');
+        const btn1 = currentFeatured.querySelector('.btn-expand');
+        if(btn1) {
+            btn1.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            btn1.onclick = (e) => { e.stopPropagation(); toggleFocusMode(currentFeatured); };
+        }
+        currentFeatured.onclick = () => swapFeatured(currentFeatured);
+        strip.appendChild(currentFeatured);
+
+        // Yeniyi büyüt, grid'e al
+        videoGrid.appendChild(newCard); 
+        newCard.classList.add('featured');
+        newCard.onclick = null;
+        const btn2 = newCard.querySelector('.btn-expand');
+        if(btn2) {
+            btn2.innerHTML = '<i class="fa-solid fa-compress"></i>';
+            btn2.onclick = (e) => { e.stopPropagation(); exitFocusMode(); };
+        }
+    }
+}
+
+// ... Yardımcı Fonksiyonlar ...
+export function setLocalMirror(isMirrored) {
+    state.isMirrored = isMirrored;
+    const v = document.querySelector('#video-local video');
+    if(v) isMirrored ? v.classList.add('mirrored') : v.classList.remove('mirrored');
+}
+
 export function updateParticipantsUI() {
     if (!participantList) return;
     participantList.innerHTML = "";
-    
-    // Eğer liste boşsa (ilk giriş)
-    const listToRender = (state.participantList.length > 0) 
-        ? state.participantList 
-        : [{ name: state.myUsername, id: state.peer?.id, isMe: true }];
-
-    listToRender.forEach(user => {
-        const isMe = (user.id === state.peer?.id);
-        addParticipantRow(user.name + (isMe ? " (Sen)" : ""), isMe);
-    });
-
-    if (participantBadge) participantBadge.innerText = listToRender.length;
+    const list = (state.participantList.length > 0) ? state.participantList : [{ name: state.myUsername, id: state.peer?.id, isMe: true }];
+    list.forEach(u => addParticipantRow(u.name + (u.id === state.peer?.id ? " (Sen)" : ""), u.id === state.peer?.id));
+    if(participantBadge) participantBadge.innerText = list.length;
 }
 
 function addParticipantRow(name, isMe) {
     const li = document.createElement('li');
     li.innerHTML = `
-        <div class="user-avatar" style="background-color: ${isMe ? 'var(--primary)' : '#faa61a'}; width:32px; height:32px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold; color:white;">
-            ${name.charAt(0).toUpperCase()}
-        </div>
-        <span style="font-weight: 500; color: var(--text-main); font-size: 0.9rem;">${name}</span>
-        <i class="fa-solid fa-circle" style="color:#3ba55c; font-size: 0.6rem; margin-left: auto;"></i>
+        <div style="width:32px; height:32px; border-radius:50%; background:${isMe ? '#fff' : '#5865F2'}; color:${isMe?'#000':'#fff'}; display:flex; justify-content:center; align-items:center; font-weight:bold;">${name.charAt(0).toUpperCase()}</div>
+        <span style="font-weight: 500; font-size: 0.9rem;">${name}</span>
     `;
     participantList.appendChild(li);
 }
 
-// --- YARDIMCI ---
 export function updateMyId(id) {
     const el = document.getElementById('my-id');
-    if(el) el.innerText = "#" + id;
+    if(el) el.innerText = id;
 }
 
 export function updateNameTag(peerId, name) {
-    // Kamerayı güncelle
-    const nameEl = document.getElementById(`name-video-${peerId}`);
-    if (nameEl) nameEl.innerText = name;
-    const card = document.getElementById(`video-${peerId}`);
-    if(card) {
-        const av = card.querySelector('.avatar-circle');
-        if(av) av.innerText = name.charAt(0).toUpperCase();
-    }
-    // Varsa ekranı da güncelle
-    const screenNameEl = document.getElementById(`name-screen-${peerId}`);
-    if(screenNameEl) screenNameEl.innerText = `${name} (Ekran)`;
+    const el = document.getElementById(`name-video-${peerId}`);
+    if(el) el.innerHTML = name;
 }
 
 function monitorVideoState(stream, card) {
     const interval = setInterval(() => {
         if (!card.isConnected) { clearInterval(interval); return; }
-        const videoTrack = stream.getVideoTracks()[0];
-        if (videoTrack && videoTrack.enabled && videoTrack.readyState === 'live') {
+        const track = stream.getVideoTracks()[0];
+        if (track && track.enabled && track.readyState === 'live') {
             card.classList.add('video-active');
         } else {
             card.classList.remove('video-active');
@@ -156,12 +234,11 @@ function monitorVideoState(stream, card) {
     }, 1000);
 }
 
-function toggleFullscreenCard(card, btn) {
-    if (!document.fullscreenElement) {
-        card.requestFullscreen().catch(console.error);
-        btn.innerHTML = '<i class="fa-solid fa-compress"></i>';
-    } else {
-        document.exitFullscreen();
-        btn.innerHTML = '<i class="fa-solid fa-expand"></i>';
-    }
+function startClock() {
+    setInterval(() => {
+        const now = new Date();
+        const t = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const el = document.getElementById('clock-display');
+        if(el) el.innerText = t;
+    }, 1000);
 }

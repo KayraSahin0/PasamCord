@@ -4,19 +4,14 @@ export const state = {
     localScreenStream: null,
     peer: null,
     peers: {}, 
-    
-    // Katılımcı Senkronizasyonu
     participantList: [],
-
-    // Audio Context
     audioContext: null,
     gainNode: null,
     micSource: null,
     audioDestination: null,
-
-    // Durumlar
     isMuted: false,
-    isCameraOff: true,  // Varsayılan KAPALI
+    isCameraOff: true,
     isDeafened: false,
-    isScreenSharing: false
+    isScreenSharing: false,
+    isMirrored: true
 };

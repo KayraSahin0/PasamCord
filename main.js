@@ -11,7 +11,6 @@ window.loginUser = async function() {
     if(success) {
         UI.showAppScreen();
         Network.initPeer();
-        startTimer();
     }
 };
 
@@ -31,14 +30,13 @@ window.toggleMute = function() {
     const track = state.localStream.getAudioTracks()[0];
     track.enabled = !track.enabled;
     state.isMuted = !track.enabled;
-
     const btn = document.getElementById('mute-btn');
     const icon = document.getElementById('mute-icon');
     if (state.isMuted) {
-        btn.classList.add('btn-danger');
+        btn.classList.add('btn-off');
         icon.classList.replace('fa-microphone', 'fa-microphone-slash');
     } else {
-        btn.classList.remove('btn-danger');
+        btn.classList.remove('btn-off');
         icon.classList.replace('fa-microphone-slash', 'fa-microphone');
     }
 };
@@ -48,7 +46,6 @@ window.toggleCamera = function() {
     const track = state.localStream.getVideoTracks()[0];
     track.enabled = !track.enabled;
     state.isCameraOff = !track.enabled;
-
     const btn = document.getElementById('camera-btn');
     const icon = document.getElementById('camera-icon');
     if (state.isCameraOff) {
@@ -62,50 +59,36 @@ window.toggleCamera = function() {
 
 window.toggleDeafen = function() {
     state.isDeafened = !state.isDeafened;
-    const videos = document.querySelectorAll('video');
-    videos.forEach(v => {
-        // Kendi videomuzu etkileme (o zaten muted)
-        if (!v.closest('#video-local') && !v.closest('#screen-local')) {
-            v.muted = state.isDeafened;
-        }
+    document.querySelectorAll('video').forEach(v => {
+        if (v.id !== 'video-local' && v.id !== 'screen-local') v.muted = state.isDeafened;
     });
-
     const btn = document.getElementById('deafen-btn');
-    const icon = document.getElementById('deafen-icon');
-    if (state.isDeafened) {
-        btn.classList.add('btn-danger');
-        icon.classList.replace('fa-headphones', 'fa-ear-deaf');
-    } else {
-        btn.classList.remove('btn-danger');
-        icon.classList.replace('fa-ear-deaf', 'fa-headphones');
-    }
+    if(state.isDeafened) btn.classList.add('btn-off');
+    else btn.classList.remove('btn-off');
 };
 
 window.toggleScreenShare = async function() {
     const btn = document.getElementById('screen-btn');
-
     if (!state.isScreenSharing) {
-        // Başlat
         try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+            const stream = await navigator.mediaDevices.getDisplayMedia({ 
+                video: { cursor: "always", displaySurface: "monitor", frameRate: 30, width: { ideal: 1920 }, height: { ideal: 1080 } }, 
+                audio: { echoCancellation: true, noiseSuppression: true }
+            });
             state.localScreenStream = stream;
             state.isScreenSharing = true;
-
             UI.addVideoCard('local', stream, state.myUsername, true, true);
             Network.shareScreenToAll();
-
             btn.classList.add('btn-success');
-            stream.getVideoTracks()[0].onended = () => window.toggleScreenShare(); // Durunca tetikle
-
+            stream.getVideoTracks()[0].onended = () => { if(state.isScreenSharing) window.toggleScreenShare(); };
         } catch (err) { console.error(err); }
     } else {
-        // Durdur
         if (state.localScreenStream) {
             state.localScreenStream.getTracks().forEach(t => t.stop());
             state.localScreenStream = null;
         }
         state.isScreenSharing = false;
-        UI.removeVideoCard('local', true); // Ekranı sil
+        UI.removeVideoCard('local', true);
         btn.classList.remove('btn-success');
     }
 };
@@ -121,6 +104,9 @@ window.changeAudioOutput = async () => {
         if('setSinkId' in v) await v.setSinkId(deviceId);
     }
 };
+
+window.openTab = (name) => UI.openSettingsTab(name);
+window.toggleMirrorSetting = (checked) => UI.setLocalMirror(checked);
 window.toggleSettings = () => document.getElementById('settings-modal').classList.toggle('hidden');
 window.toggleParticipants = () => document.getElementById('participants-panel').classList.toggle('open');
 window.copyId = () => {
@@ -129,14 +115,3 @@ window.copyId = () => {
     fb.style.opacity = '1'; fb.classList.remove('fade-out');
     setTimeout(() => { fb.style.opacity = '0'; fb.classList.add('fade-out'); }, 1000);
 };
-
-function startTimer() {
-    let sec = 0;
-    setInterval(() => {
-        sec++;
-        const m = Math.floor(sec/60).toString().padStart(2,'0');
-        const s = (sec%60).toString().padStart(2,'0');
-        const el = document.getElementById('call-timer');
-        if(el) el.innerText = `${m}:${s}`;
-    }, 1000);
-}

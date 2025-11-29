@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PasamCord Pro</title>
+    <title>PasamCord Dark</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -13,7 +13,7 @@
     <div id="login-screen" class="login-overlay">
         <div class="login-card">
             <div class="login-header">
-                <i class="fa-brands fa-discord logo-icon"></i>
+                <i class="fa-solid fa-video logo-icon"></i>
                 <h2>PasamCord</h2>
             </div>
             <p class="login-desc">Sohbete katılmak için bir kimlik belirleyin.</p>
@@ -22,79 +22,76 @@
                 <input type="text" id="username-input" placeholder="Kullanıcı Adı" autocomplete="off">
             </div>
             <button class="btn-primary" onclick="window.loginUser()">
-                Giriş Yap <i class="fa-solid fa-arrow-right"></i>
+                Katıl
             </button>
         </div>
     </div>
 
-    <div class="main-wrapper">
-        <div class="main-card hidden" id="app-screen">
+    <div class="main-wrapper hidden" id="app-screen">
+        
+        <div class="connect-overlay" id="connect-panel">
+            <div class="connect-box">
+                <h3>Toplantıya Hazır Mısın?</h3>
+                <p class="welcome-text"><span id="display-username"></span> olarak giriş yapıldı.</p>
+                <div class="room-input-group">
+                    <div class="id-display" onclick="window.copyId()" title="Kopyalamak için tıkla">
+                        <span id="my-id">ID Yükleniyor...</span>
+                        <i class="fa-regular fa-copy"></i>
+                    </div>
+                    <input type="text" id="remote-id" placeholder="Toplantı kodu veya ID">
+                    <button class="btn-join" onclick="window.startCall()">Şimdi Katıl</button>
+                </div>
+                <div id="copy-feedback" class="fade-out">Kopyalandı!</div>
+            </div>
+        </div>
+
+        <div class="video-stage" id="video-stage">
+            <div class="video-grid" id="video-grid">
+                </div>
+            </div>
+
+        <div class="bottom-bar">
             
-            <div class="top-bar">
-                <div class="app-brand"><i class="fa-brands fa-discord"></i> PasamCord</div>
-                <div class="top-actions">
-                    <button class="action-btn" onclick="window.toggleSettings()" title="Ayarlar">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
-                    <button class="action-btn" onclick="window.toggleParticipants()" title="Katılımcılar">
-                        <i class="fa-solid fa-users"></i>
-                        <span id="participant-badge" class="badge">1</span>
-                    </button>
-                </div>
+            <div class="footer-left">
+                <span id="clock-display">00:00</span>
+                <span class="separator">|</span>
+                <span id="footer-room-id" class="room-id-tag">#ODAMIZ</span>
             </div>
 
-            <div class="id-container" onclick="window.copyId()">
-                <div class="id-label">ODA KİMLİĞİN</div>
-                <div class="id-value">
-                    <span id="my-id">#...</span>
-                    <i class="fa-regular fa-copy"></i>
-                </div>
-                <div id="copy-feedback">Kopyalandı!</div>
+            <div class="footer-center">
+                <button class="ctrl-btn" id="mute-btn" onclick="window.toggleMute()" title="Mikrofon">
+                    <i class="fa-solid fa-microphone" id="mute-icon"></i>
+                </button>
+
+                <button class="ctrl-btn btn-off" id="camera-btn" onclick="window.toggleCamera()" title="Kamera">
+                    <i class="fa-solid fa-video-slash" id="camera-icon"></i>
+                </button>
+
+                <button class="ctrl-btn" id="screen-btn" onclick="window.toggleScreenShare()" title="Ekran Paylaş">
+                    <i class="fa-solid fa-desktop" id="screen-icon"></i>
+                </button>
+
+                <button class="ctrl-btn" id="deafen-btn" onclick="window.toggleDeafen()" title="Sesi Kapat">
+                    <i class="fa-solid fa-headphones" id="deafen-icon"></i>
+                </button>
+
+                <button class="ctrl-btn" onclick="window.toggleSettings()" title="Ayarlar">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+
+                <button class="ctrl-btn btn-hangup" onclick="window.endCall()" title="Ayrıl">
+                    <i class="fa-solid fa-phone-slash"></i>
+                </button>
             </div>
 
-            <div class="connect-box" id="connect-panel">
-                <h3 class="welcome-msg">Hoşgeldin, <span id="display-username"></span>!</h3>
-                <div class="input-group">
-                    <input type="text" id="remote-id" placeholder="Bağlanılacak ID (Örn: #A1B2)">
-                    <button class="btn-connect" onclick="window.startCall()">
-                        <i class="fa-solid fa-link"></i> Bağlan
-                    </button>
-                </div>
-            </div>
-
-            <div class="call-section hidden" id="call-panel">
-                <div class="video-grid" id="video-grid"></div>
-                
-                <div class="bottom-bar">
-                    <div class="timer-badge" id="call-timer">00:00</div>
-                    
-                    <div class="controls">
-    <button class="ctrl-btn btn-off" id="camera-btn" onclick="window.toggleCamera()" title="Kamera">
-        <i class="fa-solid fa-video-slash" id="camera-icon"></i>
-    </button>
-    
-    <button class="ctrl-btn" id="mute-btn" onclick="window.toggleMute()" title="Mikrofon">
-        <i class="fa-solid fa-microphone" id="mute-icon"></i>
-    </button>
-
-    <button class="ctrl-btn" id="screen-btn" onclick="window.toggleScreenShare()" title="Ekran Paylaş">
-        <i class="fa-solid fa-desktop" id="screen-icon"></i>
-    </button>
-
-    <button class="ctrl-btn" id="deafen-btn" onclick="window.toggleDeafen()" title="Sesi Kapat">
-        <i class="fa-solid fa-headphones" id="deafen-icon"></i>
-    </button>
-    
-    <button class="ctrl-btn btn-danger" onclick="window.endCall()" title="Ayrıl">
-        <i class="fa-solid fa-phone-slash"></i>
-    </button>
-</div>
-                </div>
-            </div>
-
-            <div class="footer-info">
-                <span id="status-dot" class="dot yellow"></span>
-                <span id="status-text">Sunucuya bağlanılıyor...</span>
+            <div class="footer-right">
+                <button class="icon-btn" onclick="window.toggleParticipants()" title="Katılımcılar">
+                    <i class="fa-solid fa-users"></i>
+                    <span id="participant-badge" class="badge">1</span>
+                </button>
+                <button class="icon-btn" title="Sohbet">
+                    <i class="fa-solid fa-message"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -105,62 +102,64 @@
             <button class="close-btn" onclick="window.toggleParticipants()">&times;</button>
         </div>
         <div class="panel-content">
-            <ul class="user-list" id="participant-list">
-                </ul>
+            <ul class="user-list" id="participant-list"></ul>
         </div>
     </div>
 
     <div id="settings-modal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-sliders"></i> Ses ve Video Ayarları</h3>
-                <button onclick="window.toggleSettings()" class="close-modal">&times;</button>
-            </div>
-            
-            <div class="modal-body">
-                <div class="setting-block">
-                    <label class="setting-label">
-                        <i class="fa-solid fa-volume-high"></i> Çıkış Sesi (Hoparlör)
-                    </label>
-                    <input type="range" class="custom-range" min="0" max="1" step="0.1" value="1" oninput="window.changeOutputVolume(this.value)">
-                </div>
-                
-                <div class="setting-block">
-                    <label class="setting-label">
-                        <i class="fa-solid fa-microphone-lines"></i> Mikrofon Hassasiyeti (Boost)
-                    </label>
-                    <div class="range-labels">
-                        <span>Düşük</span><span>Normal</span><span>Yüksek</span>
-                    </div>
-                    <input type="range" class="custom-range" min="-1" max="1" step="0.1" value="0" oninput="window.changeMicGain(this.value)">
-                </div>
-
+        <div class="modal-box settings-layout">
+            <div class="settings-sidebar">
+                <div class="settings-title">AYARLAR</div>
+                <button class="tab-btn active" onclick="window.openTab('devices')">Cihazlar</button>
+                <button class="tab-btn" onclick="window.openTab('audio')">Ses</button>
+                <button class="tab-btn" onclick="window.openTab('video')">Video</button>
                 <hr class="separator">
-
-                <div class="setting-block">
-                    <label class="setting-label">Giriş Cihazları</label>
-                    <div class="select-wrapper">
-                        <select id="audio-input-select" onchange="window.changeAudioInput()"></select>
-                        <i class="fa-solid fa-angle-down"></i>
+                <button class="tab-btn btn-close-settings" onclick="window.toggleSettings()">İptal</button>
+            </div>
+            <div class="settings-content-area">
+                <div id="tab-devices" class="tab-content active">
+                    <h3>Cihaz Seçimi</h3>
+                    <div class="setting-block">
+                        <label class="setting-label">Mikrofon</label>
+                        <div class="select-wrapper"><select id="audio-input-select" onchange="window.changeAudioInput()"></select><i class="fa-solid fa-angle-down"></i></div>
                     </div>
-                    <div class="select-wrapper">
-                        <select id="video-input-select" onchange="window.changeVideoInput()"></select>
-                        <i class="fa-solid fa-angle-down"></i>
+                    <div class="setting-block">
+                        <label class="setting-label">Kamera</label>
+                        <div class="select-wrapper"><select id="video-input-select" onchange="window.changeVideoInput()"></select><i class="fa-solid fa-angle-down"></i></div>
+                    </div>
+                    <div class="setting-block">
+                        <label class="setting-label">Hoparlör</label>
+                        <div class="select-wrapper"><select id="audio-output-select" onchange="window.changeAudioOutput()"></select><i class="fa-solid fa-angle-down"></i></div>
                     </div>
                 </div>
-
-                <div class="setting-block">
-                    <label class="setting-label">Çıkış Cihazı</label>
-                    <div class="select-wrapper">
-                        <select id="audio-output-select" onchange="window.changeAudioOutput()"></select>
-                        <i class="fa-solid fa-angle-down"></i>
+                <div id="tab-audio" class="tab-content">
+                    <h3>Ses Ayarları</h3>
+                    <div class="setting-block">
+                        <label class="setting-label">Hoparlör Sesi</label>
+                        <input type="range" class="custom-range" min="0" max="1" step="0.1" value="1" oninput="window.changeOutputVolume(this.value)">
+                    </div>
+                    <div class="setting-block">
+                        <label class="setting-label">Mikrofon Hassasiyeti</label>
+                        <input type="range" class="custom-range" min="-1" max="1" step="0.1" value="0" oninput="window.changeMicGain(this.value)">
+                    </div>
+                </div>
+                <div id="tab-video" class="tab-content">
+                    <h3>Video Ayarları</h3>
+                    <div class="setting-block">
+                        <div class="toggle-wrapper">
+                            <div class="toggle-info">
+                                <label class="setting-label">Kamerayı Aynala</label>
+                                <p class="setting-desc">Önizlemeyi ters çevir.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="mirror-check" checked onchange="window.toggleMirrorSetting(this.checked)">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="modal-footer">
-                <button class="btn-save" onclick="window.toggleSettings()">Kaydet ve Kapat</button>
-            </div>
+            <button onclick="window.toggleSettings()" class="close-modal-mobile">&times;</button>
         </div>
     </div>
 
