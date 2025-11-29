@@ -16,8 +16,8 @@
                 <i class="fa-brands fa-discord logo-icon"></i>
                 <h2>PasamCord</h2>
             </div>
-            <p style="color:#bbb; margin-bottom:20px;">Devam etmek için bir isim belirleyin.</p>
-            <input type="text" id="username-input" placeholder="Adınız veya Takma Adınız" autocomplete="off">
+            <p style="color:#bbb; margin-bottom:20px;">Görüntülü sohbet için bir isim belirleyin.</p>
+            <input type="text" id="username-input" placeholder="Adınız" autocomplete="off">
             <button class="btn btn-call" onclick="loginUser()">
                 Giriş Yap <i class="fa-solid fa-arrow-right"></i>
             </button>
@@ -46,20 +46,38 @@
             </div>
             
             <button class="btn btn-call" onclick="startCall()">
-                <i class="fa-solid fa-phone"></i> Bağlan
+                <i class="fa-solid fa-video"></i> Bağlan
             </button>
         </div>
 
         <div class="call-active-section hidden" id="call-panel">
-            <div class="pulse-ring">
-                <i class="fa-solid fa-microphone user-icon"></i>
-            </div>
             
-            <p class="status-active" id="connected-peer-name">Bağlanılıyor...</p>
+            <div class="video-container">
+                <div class="video-wrapper remote">
+                    <video id="remote-video" autoplay playsinline></video>
+                    <div class="video-label" id="remote-label">Bağlanıyor...</div>
+                    <div class="no-video-placeholder">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+
+                <div class="video-wrapper local">
+                    <video id="local-video" autoplay playsinline muted></video>
+                    <div class="video-label">Sen</div>
+                    <div class="no-video-placeholder">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+            </div>
+
             <p class="timer" id="call-timer">00:00</p>
             
             <div class="control-buttons">
-                <button class="btn-circle btn-mute" id="mute-btn" onclick="toggleMute()" title="Mikrofonu Aç/Kapat">
+                <button class="btn-circle btn-secondary" id="camera-btn" onclick="toggleCamera()" title="Kamerayı Aç/Kapat">
+                    <i class="fa-solid fa-video" id="camera-icon"></i>
+                </button>
+
+                <button class="btn-circle btn-secondary" id="mute-btn" onclick="toggleMute()" title="Mikrofonu Aç/Kapat">
                     <i class="fa-solid fa-microphone" id="mute-icon"></i>
                 </button>
                 
@@ -78,26 +96,21 @@
     <div id="incoming-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-icon">
-                <i class="fa-solid fa-phone-volume"></i>
+                <i class="fa-solid fa-video"></i>
             </div>
-            <h3>Oda İsteği</h3>
+            <h3>Görüntülü Arama</h3>
             <p>
-                <span id="caller-name-display" style="font-weight:bold; color:var(--primary); font-size:1.1rem;">Bilinmeyen</span>
+                <span id="caller-name-display" style="font-weight:bold; color:var(--primary); font-size:1.1rem;">...</span>
                 <br>odaya girmek istiyor.
             </p>
             
             <div class="modal-actions">
-                <button class="btn-modal btn-reject" onclick="rejectIncomingCall()">
-                    <i class="fa-solid fa-xmark"></i> Reddet
-                </button>
-                <button class="btn-modal btn-accept" onclick="acceptIncomingCall()">
-                    <i class="fa-solid fa-check"></i> Kabul Et
-                </button>
+                <button class="btn-modal btn-reject" onclick="rejectIncomingCall()">Reddet</button>
+                <button class="btn-modal btn-accept" onclick="acceptIncomingCall()">Kabul Et</button>
             </div>
         </div>
     </div>
 
-    <audio id="remote-audio" autoplay></audio>
     <script src="script.js"></script>
 </body>
 </html>
