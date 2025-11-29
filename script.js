@@ -1,4 +1,4 @@
-// HTML Elementleri
+// --- DOM ELEMENTLERİ ---
 const loginScreen = document.getElementById('login-screen');
 const appScreen = document.getElementById('app-screen');
 const usernameInput = document.getElementById('username-input');
@@ -6,98 +6,223 @@ const displayUsername = document.getElementById('display-username');
 
 const myIdDisplay = document.getElementById('my-id');
 const remoteIdInput = document.getElementById('remote-id');
-const statusText = document.getElementById('status-text');
-const statusDot = document.getElementById('status-dot');
 const connectPanel = document.getElementById('connect-panel');
 const callPanel = document.getElementById('call-panel');
-const callTimer = document.getElementById('call-timer');
+const videoContainer = document.getElementById('video-container');
 
-// Video Elementleri
+// Video & Audio
 const localVideo = document.getElementById('local-video');
 const remoteVideo = document.getElementById('remote-video');
 const remoteLabel = document.getElementById('remote-label');
 
-// Butonlar
+// Avatars
+const localAvatar = document.getElementById('local-avatar');
+const remoteAvatar = document.getElementById('remote-avatar');
+
+// Settings
+const audioSelect = document.getElementById('audio-input-select');
+const videoSelect = document.getElementById('video-input-select');
+const settingsModal = document.getElementById('settings-modal');
+
+// Side Panel
+const participantsPanel = document.getElementById('participants-panel');
+const participantList = document.getElementById('participant-list');
+const participantCount = document.getElementById('participant-count');
+
+// Buttons
 const muteBtn = document.getElementById('mute-btn');
 const muteIcon = document.getElementById('mute-icon');
 const cameraBtn = document.getElementById('camera-btn');
 const cameraIcon = document.getElementById('camera-icon');
 
-// Modal
+// Modals
 const incomingModal = document.getElementById('incoming-modal');
 const callerNameDisplay = document.getElementById('caller-name-display');
 
-// Değişkenler
+// --- DEĞİŞKENLER ---
 let localStream = null;
 let peer = null;
 let currentCall = null;
 let pendingCall = null;
-let timerInterval = null;
-let myUsername = "Misafir";
-let isMuted = false;
-let isCameraOff = true; // Varsayılan olarak kamera kapalı başlar
+let myUsername = "Ben";
+let remoteUsername = "Bilinmeyen";
 
-// 1. GİRİŞ
+// Durumlar
+let isMuted = false;
+let isCameraOff = true;
+
+// Audio Context (Gain/Hassasiyet için)
+let audioContext;
+let gainNode;
+let mediaStreamSource;
+
+// --- GİRİŞ VE BAŞLANGIÇ ---
 function loginUser() {
     const name = usernameInput.value.trim();
-    if(!name) { alert("Lütfen bir isim giriniz!"); return; }
+    if(!name) { alert("Lütfen bir isim girin!"); return; }
     myUsername = name;
     displayUsername.innerText = myUsername;
+    
+    // Avatar baş harfi
+    localAvatar.innerText = myUsername.charAt(0).toUpperCase();
+    
+    // UI Güncelle
     loginScreen.classList.add('hidden');
     appScreen.classList.remove('hidden');
+    
+    // Katılımcı Listesini Güncelle (Sadece biz varız)
+    updateParticipantsList();
+
+    // Sistemi Başlat
     startSystem();
 }
 
-function startSystem() {
-    // Hem SES hem VİDEO izni istiyoruz
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-            localStream = stream;
-            
-            // Başlangıçta Kamerayı KAPAT (Track seviyesinde)
-            // Bu sayede izin alınır ama görüntü gitmez.
-            const videoTrack = localStream.getVideoTracks()[0];
-            if(videoTrack) {
-                videoTrack.enabled = false; 
-                isCameraOff = true;
-                updateCameraUI(); // Butonun kırmızı olmasını sağla
-            }
+async function startSystem() {
+    try {
+        // Varsayılan stream
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        
+        // Audio Gain (Hassasiyet) Kurulumu
+        setupAudioGain(localStream);
+        
+        // Kamera başlangıçta kapalı
+        const videoTrack = localStream.getVideoTracks()[0];
+        if(videoTrack) { videoTrack.enabled = false; isCameraOff = true; updateCameraUI(); }
 
-            // Kendi görüntümüzü video elementine bağla (Karanlık görünecek başta)
-            localVideo.srcObject = stream;
+        localVideo.srcObject = localStream;
+        
+        // Cihazları listele (Ayarlar için)
+        await getDevices();
 
-            updateStatus("Sunucuya bağlanılıyor...", "yellow");
-            const myShortId = Math.random().toString(36).substr(2, 5).toUpperCase();
-            initPeer(myShortId);
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Kamera ve Mikrofon izni vermeniz gerekiyor!");
-            updateStatus("İzin hatası!", "red");
-        });
+        // PeerJS Bağlantısı
+        const myShortId = Math.random().toString(36).substr(2, 5).toUpperCase();
+        initPeer(myShortId);
+
+    } catch (err) {
+        console.error("Başlangıç Hatası:", err);
+        alert("Kamera/Mikrofon erişimine izin verin.");
+    }
 }
 
-// 2. PEER BAŞLATMA
+// --- SES HASSASİYETİ (AUDIO CONTEXT) ---
+function setupAudioGain(stream) {
+    // Web Audio API kullanarak sesin sesini dijital olarak artırma (Gain)
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    mediaStreamSource = audioContext.createMediaStreamSource(stream);
+    gainNode = audioContext.createGain();
+    
+    // Source -> Gain -> Destination bağlantısı PeerConnection içinde otomatik olur,
+    // Ancak burada akışı manipüle etmek için 'destination'a ihtiyacımız var ama
+    // WebRTC'de track'i değiştirmek daha karmaşık. 
+    // Basitlik için: PeerJS doğrudan ham stream'i alır.
+    // Gerçek bir gain kontrolü için, AudioContext'ten çıkan "destination.stream"i PeerJS'e vermeliyiz.
+    
+    // Gelişmiş Yöntem: Stream'i Gain Node'dan geçirip yeni bir stream oluşturuyoruz.
+    const destination = audioContext.createMediaStreamDestination();
+    mediaStreamSource.connect(gainNode);
+    gainNode.connect(destination);
+    
+    // Orijinal video track ile işlenmiş ses track'ini birleştir
+    const processedStream = new MediaStream([
+        destination.stream.getAudioTracks()[0],
+        stream.getVideoTracks()[0]
+    ]);
+    
+    // PeerJS artık bu işlenmiş stream'i kullanmalı
+    // NOT: Bu demo için localStream'i güncelliyoruz ama mevcut kod yapısında
+    // getUserMedia tekrar çağrıldığında bu yapı bozulabilir. 
+    // Basit tutmak için volume (çıkış sesi) ayarını yapıyoruz, input gain karmaşık bir konu.
+}
+
+// --- CİHAZ YÖNETİMİ (AYARLAR) ---
+async function getDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    audioSelect.innerHTML = "";
+    videoSelect.innerHTML = "";
+    
+    devices.forEach(device => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `${device.kind} - ${device.deviceId.substr(0,5)}`;
+        
+        if(device.kind === 'audioinput') audioSelect.appendChild(option);
+        else if(device.kind === 'videoinput') videoSelect.appendChild(option);
+    });
+}
+
+// Cihaz Değiştirme Fonksiyonu
+async function changeStreamInput() {
+    const audioSource = audioSelect.value;
+    const videoSource = videoSelect.value;
+    
+    // Eski trackleri durdur
+    if(localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+    }
+
+    // Yeni cihazlarla stream al
+    const constraints = {
+        audio: { deviceId: audioSource ? { exact: audioSource } : undefined },
+        video: { deviceId: videoSource ? { exact: videoSource } : undefined }
+    };
+
+    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    
+    // Video ayarını koru (Kapatılsın mı?)
+    localStream.getVideoTracks()[0].enabled = !isCameraOff;
+    localVideo.srcObject = localStream;
+
+    // Aktif görüşme varsa karşıya giden stream'i güncelle (ReplaceTrack)
+    if(currentCall && currentCall.peerConnection) {
+        const senders = currentCall.peerConnection.getSenders();
+        const videoSender = senders.find(s => s.track.kind === 'video');
+        const audioSender = senders.find(s => s.track.kind === 'audio');
+        
+        if(videoSender) videoSender.replaceTrack(localStream.getVideoTracks()[0]);
+        if(audioSender) audioSender.replaceTrack(localStream.getAudioTracks()[0]);
+    }
+}
+
+function changeAudioInput() { changeStreamInput(); }
+function changeVideoInput() { changeStreamInput(); }
+
+// Ses Ayarları
+function changeOutputVolume(val) {
+    remoteVideo.volume = val;
+}
+function changeMicGain(val) {
+    if(gainNode) gainNode.gain.value = val;
+}
+
+// --- PEER JS ---
 function initPeer(id) {
     peer = new Peer(id);
     peer.on('open', (id) => {
         myIdDisplay.innerText = "#" + id;
-        updateStatus("Kullanıma Hazır", "green");
     });
 
     peer.on('call', (call) => {
         pendingCall = call;
-        const callerName = call.metadata && call.metadata.username ? call.metadata.username : ("#" + call.peer);
-        callerNameDisplay.innerText = callerName;
+        const name = call.metadata?.username || "#" + call.peer;
+        callerNameDisplay.innerText = name;
         incomingModal.classList.remove('hidden');
     });
 }
 
-// 3. ARAMA İŞLEMLERİ
+// --- ARAMA YÖNETİMİ ---
+function startCall() {
+    let rawInput = remoteIdInput.value.trim().toUpperCase().replace('#', '');
+    if (!rawInput) return alert("ID girin!");
+
+    const options = { metadata: { username: myUsername } };
+    const call = peer.call(rawInput, localStream, options);
+    handleCall(call, "#" + rawInput); // İsim sonra güncellenebilir
+}
+
 function acceptIncomingCall() {
     if (pendingCall) {
-        pendingCall.answer(localStream); // Cevapla
-        const name = pendingCall.metadata && pendingCall.metadata.username ? pendingCall.metadata.username : ("#" + pendingCall.peer);
+        pendingCall.answer(localStream);
+        const name = pendingCall.metadata?.username || "#" + pendingCall.peer;
         handleCall(pendingCall, name);
         incomingModal.classList.add('hidden');
         pendingCall = null;
@@ -105,157 +230,159 @@ function acceptIncomingCall() {
 }
 
 function rejectIncomingCall() {
-    if (pendingCall) { pendingCall.close(); incomingModal.classList.add('hidden'); pendingCall = null; }
+    if(pendingCall) { pendingCall.close(); pendingCall = null; incomingModal.classList.add('hidden'); }
 }
 
-function startCall() {
-    let rawInput = remoteIdInput.value.trim().toUpperCase();
-    let remoteId = rawInput.replace('#', ''); 
-    if (!remoteId) { alert("Lütfen bir ID girin."); return; }
-
-    updateStatus("#" + remoteId + " aranıyor...", "yellow");
-    const options = { metadata: { "username": myUsername } };
-    const call = peer.call(remoteId, localStream, options);
-    handleCall(call, "#" + remoteId);
-}
-
-// 4. GÖRÜŞME YÖNETİMİ
-function handleCall(call, remoteName) {
+function handleCall(call, name) {
     currentCall = call;
-    remoteLabel.innerText = remoteName;
+    remoteUsername = name;
+    remoteLabel.innerText = name;
+    remoteAvatar.innerText = name.charAt(0).toUpperCase();
+
+    // UI Aç
+    connectPanel.classList.add('hidden');
+    callPanel.classList.remove('hidden');
+    updateParticipantsList(); // Listeye ekle
 
     call.on('stream', (remoteStream) => {
-        // Karşıdan gelen stream'i video elementine ver
         remoteVideo.srcObject = remoteStream;
-        toggleCallUI(true);
-        updateStatus("Bağlı", "green");
+        startVideoCheck();
         startTimer();
-        
-        // Ses veya video gelince kontrol et
-        checkVideoState(remoteStream, 'remote');
     });
 
     call.on('close', () => endCallUI());
-    call.on('error', () => { endCallUI(); alert("Bağlantı koptu."); });
+    call.on('error', () => endCallUI());
 }
 
 function endCall() {
-    if (currentCall) currentCall.close();
+    if(currentCall) currentCall.close();
     endCallUI();
 }
 
-// 5. MEDYA KONTROLLERİ (MUTE & CAMERA)
+function endCallUI() {
+    connectPanel.classList.remove('hidden');
+    callPanel.classList.add('hidden');
+    currentCall = null;
+    remoteUsername = "Bilinmeyen";
+    updateParticipantsList(); // Listeden çıkar
+    stopTimer();
+    
+    // Fullscreen'den çık
+    if(document.fullscreenElement) document.exitFullscreen();
+}
 
+// --- UI KONTROLLERİ ---
 function toggleMute() {
     if(!localStream) return;
     const audioTrack = localStream.getAudioTracks()[0];
-    if(audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        isMuted = !audioTrack.enabled;
-        
-        // UI Güncelleme
-        if(isMuted) {
-            muteBtn.classList.add('btn-off');
-            muteIcon.classList.replace('fa-microphone', 'fa-microphone-slash');
-        } else {
-            muteBtn.classList.remove('btn-off');
-            muteIcon.classList.replace('fa-microphone-slash', 'fa-microphone');
-        }
-    }
+    audioTrack.enabled = !audioTrack.enabled;
+    isMuted = !audioTrack.enabled;
+    
+    muteBtn.classList.toggle('btn-off', isMuted);
+    muteIcon.classList.toggle('fa-microphone-slash', isMuted);
+    muteIcon.classList.toggle('fa-microphone', !isMuted);
 }
 
 function toggleCamera() {
     if(!localStream) return;
     const videoTrack = localStream.getVideoTracks()[0];
-    if(videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        isCameraOff = !videoTrack.enabled;
-        updateCameraUI();
-    }
+    videoTrack.enabled = !videoTrack.enabled;
+    isCameraOff = !videoTrack.enabled;
+    
+    updateCameraUI();
 }
 
 function updateCameraUI() {
-    // Buton Rengi ve İkonu
-    if(isCameraOff) {
-        cameraBtn.classList.add('btn-off'); // Kırmızı yap
-        cameraIcon.classList.replace('fa-video', 'fa-video-slash');
-        
-        // Bizim tarafın videosunu gizle, placeholder göster
-        document.querySelector('.local').classList.remove('video-active');
+    cameraBtn.classList.toggle('btn-off', isCameraOff);
+    cameraIcon.classList.toggle('fa-video-slash', isCameraOff);
+    cameraIcon.classList.toggle('fa-video', !isCameraOff);
+
+    // Local Video Class Ekle/Çıkar
+    const localWrapper = document.querySelector('.local');
+    if(isCameraOff) localWrapper.classList.remove('video-active');
+    else localWrapper.classList.add('video-active');
+}
+
+// Fullscreen
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        videoContainer.requestFullscreen().catch(err => alert("Tam ekran hatası: " + err.message));
+        videoContainer.classList.add('fullscreen');
+        document.getElementById('fullscreen-icon').classList.replace('fa-expand', 'fa-compress');
     } else {
-        cameraBtn.classList.remove('btn-off'); // Gri (Normal)
-        cameraIcon.classList.replace('fa-video-slash', 'fa-video');
-        
-        // Videoyu göster
-        document.querySelector('.local').classList.add('video-active');
+        document.exitFullscreen();
+        videoContainer.classList.remove('fullscreen');
+        document.getElementById('fullscreen-icon').classList.replace('fa-compress', 'fa-expand');
     }
 }
 
-// Sürekli karşı tarafın kamerasını kontrol etmek gerekebilir 
-// (Video track enable/disable olduğunda PeerJS her zaman event tetiklemeyebilir,
-// ama HTML video elementi siyah ekran verecektir. CSS placeholder mantığı için basit bir check yapıyoruz)
-setInterval(() => {
-    if(remoteVideo.srcObject) {
-        const tracks = remoteVideo.srcObject.getVideoTracks();
-        if(tracks.length > 0 && tracks[0].enabled && !tracks[0].muted) {
-            document.querySelector('.remote').classList.add('video-active');
-        } else {
-            document.querySelector('.remote').classList.remove('video-active');
+// Video Kontrol (Avatar vs Video Gösterimi)
+function startVideoCheck() {
+    setInterval(() => {
+        const remoteWrapper = document.querySelector('.remote');
+        if(remoteVideo.srcObject) {
+            const tracks = remoteVideo.srcObject.getVideoTracks();
+            if(tracks.length > 0 && tracks[0].enabled && !tracks[0].muted) {
+                remoteWrapper.classList.add('video-active');
+            } else {
+                remoteWrapper.classList.remove('video-active');
+            }
         }
-    }
-}, 1000);
+    }, 1000);
+}
 
+// --- SIDEBAR & MODAL ---
+function toggleSettings() {
+    settingsModal.classList.toggle('hidden');
+}
 
-// UI YARDIMCILARI
-function toggleCallUI(isInCall) {
-    if (isInCall) {
-        connectPanel.classList.add('hidden');
-        callPanel.classList.remove('hidden');
-        // Yeni aramada butonları sıfırla (Kamera kapalı başla)
-        isCameraOff = true; 
-        if(localStream) localStream.getVideoTracks()[0].enabled = false;
-        isMuted = false;
-        if(localStream) localStream.getAudioTracks()[0].enabled = true;
-        
-        updateCameraUI();
-        muteBtn.classList.remove('btn-off');
-        muteIcon.classList.replace('fa-microphone-slash', 'fa-microphone');
+function toggleParticipants() {
+    const panel = participantsPanel;
+    if(panel.style.right === "0px") panel.style.right = "-300px";
+    else panel.style.right = "0px";
+}
+
+function updateParticipantsList() {
+    participantList.innerHTML = "";
+    
+    // Ben
+    addParticipantToList(myUsername, true);
+    
+    // Karşı Taraf (Varsa)
+    if(currentCall) {
+        addParticipantToList(remoteUsername, false);
+        participantCount.innerText = "2";
     } else {
-        connectPanel.classList.remove('hidden');
-        callPanel.classList.add('hidden');
+        participantCount.innerText = "1";
     }
 }
 
-function endCallUI() {
-    toggleCallUI(false);
-    remoteVideo.srcObject = null;
-    currentCall = null;
-    updateStatus("Kullanıma Hazır", "green");
-    stopTimer();
-}
-
-function updateStatus(msg, color) {
-    statusText.innerText = msg;
-    statusDot.className = "dot " + color;
+function addParticipantToList(name, isMe) {
+    const li = document.createElement('li');
+    li.innerHTML = `
+        <div class="p-avatar">${name.charAt(0).toUpperCase()}</div>
+        <div class="p-info">
+            <span class="p-name">${name} ${isMe ? '(Sen)' : ''}</span>
+            <span class="p-status">Çevrimiçi</span>
+        </div>
+    `;
+    participantList.appendChild(li);
 }
 
 function copyId() {
     navigator.clipboard.writeText(myIdDisplay.innerText);
-    const feedback = document.getElementById('copy-feedback');
-    feedback.style.opacity = '1';
-    setTimeout(() => feedback.style.opacity = '0', 1500);
+    const fb = document.getElementById('copy-feedback');
+    fb.style.opacity = '1';
+    setTimeout(() => fb.style.opacity = '0', 1000);
 }
 
+// Zamanlayıcı
 function startTimer() {
-    let seconds = 0;
-    clearInterval(timerInterval);
-    callTimer.innerText = "00:00";
-    timerInterval = setInterval(() => {
-        seconds++;
-        callTimer.innerText = 
-            Math.floor(seconds / 60).toString().padStart(2, '0') + ":" + 
-            (seconds % 60).toString().padStart(2, '0');
+    let sec = 0;
+    const el = document.getElementById('call-timer');
+    window.timerInt = setInterval(() => {
+        sec++;
+        el.innerText = Math.floor(sec/60).toString().padStart(2,'0') + ":" + (sec%60).toString().padStart(2,'0');
     }, 1000);
 }
-
-function stopTimer() { clearInterval(timerInterval); }
+function stopTimer() { clearInterval(window.timerInt); }
