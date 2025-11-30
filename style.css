@@ -35,6 +35,30 @@ body {
 
 .hidden { display: none !important; }
 
+/* Logo Resim Ayarları */
+.app-logo {
+    width: 80px;  /* Genişlik isteğe göre artırılabilir */
+    height: 80px; /* Yükseklik */
+    object-fit: contain; /* Resmi bozmadan sığdırır */
+    margin-bottom: 10px; /* Başlık ile arasına boşluk koyar */
+    border-radius: 12px; /* Köşeleri hafif yuvarlar */
+}
+
+/* Giriş başlığı düzeni */
+.login-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.login-header h2 {
+    margin: 5px 0 0 0;
+    font-size: 1.8rem;
+    color: var(--primary);
+}
+
 /* --- VİDEO ALANI (STAGE) --- */
 .video-stage {
     flex-grow: 1;
