@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { updateMyId, updateRoomId, addVideoCard, removeVideoCard, updateParticipantsUI, updateNameTag, showCallScreen } from './ui.js';
+import { updateMyId, updateRoomId, addVideoCard, removeVideoCard, updateParticipantsUI, updateNameTag, showCallScreen, addMessageToUI } from './ui.js';
 
 export function initPeer() {
     const myId = Math.random().toString(36).substr(2, 5).toUpperCase();
@@ -7,9 +7,7 @@ export function initPeer() {
 
     state.peer.on('open', (id) => {
         updateMyId(id);
-        // HOST İÇİN ODA ID GÜNCELLE
         updateRoomId(id);
-        
         state.participantList = [{ id: id, name: state.myUsername, isMe: true }];
         updateParticipantsUI();
         startHeartbeat();
@@ -23,6 +21,23 @@ export function initPeer() {
 
     state.peer.on('connection', (conn) => setupDataConnection(conn));
 }
+
+// --- CHAT FONKSİYONU ---
+export function sendChatMessage(text) {
+    const messageData = { type: 'chat', sender: state.myUsername, text: text };
+    
+    // Bağlı olan herkese gönder
+    Object.values(state.peers).forEach(p => {
+        if (p.conn && p.conn.open) {
+            p.conn.send(messageData);
+        }
+    });
+}
+
+// ... (Geri kalan network.js kodları önceki ile aynıdır) ...
+// (Burada diğer fonksiyonları startHeartbeat, connectToPeer, handleCall vb. aynen koruyun)
+
+// EKSİKSİZ OLMASI İÇİN TEKRAR YAZIYORUM:
 
 function startHeartbeat() {
     setInterval(() => {
@@ -42,10 +57,7 @@ function startHeartbeat() {
 export function connectToPeer(remoteId) {
     if (!remoteId) { alert("ID Giriniz!"); return; }
     if (state.peers[remoteId]) return;
-
-    // CLIENT İÇİN ODA ID GÜNCELLE
     updateRoomId(remoteId);
-
     const call = state.peer.call(remoteId, state.localStream, { metadata: { type: 'camera' } });
     const conn = state.peer.connect(remoteId);
     setupDataConnection(conn);
@@ -73,18 +85,14 @@ function handleScreenCall(call) {
 function handleCall(call, conn = null) {
     const peerId = call.peer;
     showCallScreen();
-
     if (!conn) {
         const backConn = state.peer.connect(peerId);
         setupDataConnection(backConn);
     }
-
     state.peers[peerId] = { call: call, name: "Bağlanıyor...", id: peerId, conn: conn };
     state.lastHeartbeat[peerId] = Date.now();
     broadcastParticipants();
-
     if (state.isScreenSharing) shareScreenToPeer(peerId);
-
     call.on('stream', (stream) => addVideoCard(peerId, stream, state.peers[peerId].name, false, false));
     call.on('close', () => removePeer(peerId));
     call.on('error', () => removePeer(peerId));
@@ -127,17 +135,21 @@ function setupDataConnection(conn) {
             state.lastHeartbeat[conn.peer] = Date.now();
             return;
         }
+        
+        // CHAT MESAJI ALINDIĞINDA
+        if (data.type === 'chat') {
+            addMessageToUI(data.sender, data.text, false);
+        }
+
         if (data.type === 'name') {
             if (state.peers[conn.peer]) {
                 state.peers[conn.peer].name = data.name;
                 state.peers[conn.peer].conn = conn; 
                 updateNameTag(conn.peer, data.name);
                 broadcastParticipants();
-                // ÖNEMLİ: İsim aldık, biz de gönderelim (Reply)
                 conn.send({ type: 'name-reply', name: state.myUsername });
             }
         }
-        // İsim Cevabı (Reply) gelince de güncelle
         if (data.type === 'name-reply') {
             if (state.peers[conn.peer]) {
                 state.peers[conn.peer].name = data.name;

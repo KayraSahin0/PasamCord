@@ -13,7 +13,7 @@
     <div id="login-screen" class="login-overlay">
         <div class="login-card">
             <div class="login-header">
-                <i class="fa-solid fa-video logo-icon"></i>
+                <i class="fa-brands fa-discord logo-icon"></i>
                 <h2>PasamCord</h2>
             </div>
             
@@ -21,15 +21,13 @@
                 <i class="fa-brands fa-google"></i> Google ile Devam Et
             </button>
 
-            <div class="divider">
-                <span>veya</span>
-            </div>
+            <div class="divider"><span>veya</span></div>
 
             <div id="guest-section">
                 <p class="login-desc">Misafir olarak katılın</p>
                 <div class="input-wrapper">
                     <i class="fa-solid fa-user input-icon"></i>
-                    <input type="text" id="username-input" placeholder="Adınız" autocomplete="off">
+                    <input type="text" id="username-input" placeholder="Kullanıcı Adı" autocomplete="off">
                 </div>
                 <button class="btn-primary" onclick="window.handleGuestLogin()">
                     Misafir Olarak Gir
@@ -44,7 +42,6 @@
                 </button>
                 <button class="btn-text" onclick="window.handleLogout()">Çıkış Yap</button>
             </div>
-
         </div>
     </div>
 
@@ -54,10 +51,9 @@
             <div class="connect-box">
                 <h3>Toplantıya Hazır Mısın?</h3>
                 <div class="user-status-bar">
-                    <p class="welcome-text"><span id="display-username"></span></p>
+                    <p class="welcome-text"><span id="display-username"></span> olarak giriş yapıldı.</p>
                     <button onclick="window.handleLogout()" class="btn-logout-mini" title="Çıkış Yap"><i class="fa-solid fa-right-from-bracket"></i></button>
                 </div>
-
                 <div class="room-input-group">
                     <div class="id-display" onclick="window.copyId()" title="Kopyalamak için tıkla">
                         <span id="my-id">ID Yükleniyor...</span>
@@ -105,8 +101,9 @@
                     <i class="fa-solid fa-users"></i>
                     <span id="participant-badge" class="badge">1</span>
                 </button>
-                <button class="icon-btn" title="Sohbet">
+                <button class="icon-btn" onclick="window.toggleChat()" title="Sohbet">
                     <i class="fa-solid fa-message"></i>
+                    <span id="chat-badge" class="badge hidden"></span>
                 </button>
             </div>
         </div>
@@ -122,11 +119,28 @@
         </div>
     </div>
 
+    <div class="side-panel" id="chat-panel">
+        <div class="panel-header">
+            <h3>Oda Sohbeti</h3>
+            <button class="close-btn" onclick="window.toggleChat()">&times;</button>
+        </div>
+        <div class="chat-content" id="chat-content">
+            <div class="chat-welcome">
+                <p>Buraya gönderilen mesajlar oda kapandığında silinir.</p>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Bir mesaj yaz..." autocomplete="off">
+            <button id="send-btn" onclick="window.sendChat()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="settings-container">
             <div class="settings-sidebar">
                 <div class="settings-header-text">AYARLAR</div>
                 <button class="nav-btn active" onclick="window.openTab('devices')">Ses ve Görüntü</button>
+                <button class="nav-btn" onclick="window.openTab('quality')">Görüntü Kalitesi</button>
                 <button class="nav-btn" onclick="window.openTab('audio')">Ses Düzeyleri</button>
                 <button class="nav-btn" onclick="window.openTab('video')">Görünüm</button>
                 <button class="nav-btn btn-logout-settings" onclick="window.handleLogout()">Çıkış Yap</button>
@@ -147,6 +161,33 @@
                     <div class="form-group">
                         <label>Çıkış Cihazı (Hoparlör)</label>
                         <div class="custom-select"><select id="audio-output-select" onchange="window.changeAudioOutput()"></select><i class="fa-solid fa-chevron-down"></i></div>
+                    </div>
+                </div>
+
+                <div id="tab-quality" class="tab-pane">
+                    <h3 class="tab-title">Görüntü Kalitesi</h3>
+                    <div class="form-group">
+                        <label>Çözünürlük</label>
+                        <div class="custom-select">
+                            <select id="video-resolution" onchange="window.changeVideoQuality()">
+                                <option value="320">Düşük (320x240)</option>
+                                <option value="640">Standart (640x480)</option>
+                                <option value="1280" selected>HD Ready (1280x720)</option>
+                                <option value="1920">Full HD (1920x1080)</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Kare Hızı (FPS)</label>
+                        <div class="custom-select">
+                            <select id="video-fps" onchange="window.changeVideoQuality()">
+                                <option value="24">24 FPS</option>
+                                <option value="30" selected>30 FPS</option>
+                                <option value="60">60 FPS</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
 

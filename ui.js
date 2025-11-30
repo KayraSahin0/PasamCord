@@ -3,6 +3,9 @@ import { state } from './state.js';
 const videoGrid = document.getElementById('video-grid');
 const participantList = document.getElementById('participant-list');
 const participantBadge = document.getElementById('participant-badge');
+const chatPanel = document.getElementById('chat-panel');
+const chatContent = document.getElementById('chat-content');
+const chatBadge = document.getElementById('chat-badge');
 
 let isFocusMode = false;
 
@@ -33,14 +36,57 @@ export function openSettingsTab(tabName) {
     
     document.getElementById(`tab-${tabName}`).classList.add('active');
     
-    // Butonu bulup active yap
+    // Butonun aktifliğini ayarla
     const btns = Array.from(document.querySelectorAll('.nav-btn'));
     const target = btns.find(b => {
         if(tabName === 'devices') return b.innerText.includes('Ses ve Görüntü');
+        if(tabName === 'quality') return b.innerText.includes('Kalite');
         if(tabName === 'audio') return b.innerText.includes('Ses Düzeyleri');
         if(tabName === 'video') return b.innerText.includes('Görünüm');
     });
     if(target) target.classList.add('active');
+}
+
+// --- CHAT PANELİ YÖNETİMİ ---
+export function toggleChatPanel() {
+    chatPanel.classList.toggle('open');
+    // Panel açıldığında kırmızı noktayı (badge) gizle
+    if (chatPanel.classList.contains('open')) {
+        if(chatBadge) chatBadge.classList.add('hidden');
+    }
+}
+
+export function addMessageToUI(sender, text, isMe) {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    const msgDiv = document.createElement('div');
+    // CSS'de .mine (sağ) ve .theirs (sol) sınıfları tanımlı
+    msgDiv.className = `message ${isMe ? 'mine' : 'theirs'}`;
+    
+    msgDiv.innerHTML = `
+        <div class="message-header">
+            <span class="msg-sender">${isMe ? 'Sen' : sender}</span>
+            <span class="msg-time">${time}</span>
+        </div>
+        <div class="msg-text">${escapeHtml(text)}</div>
+    `;
+    
+    chatContent.appendChild(msgDiv);
+    chatContent.scrollTop = chatContent.scrollHeight; // En alta kaydır
+
+    // Panel kapalıysa ve mesaj başkasındansa bildirim göster
+    if (!isMe && !chatPanel.classList.contains('open')) {
+        if(chatBadge) chatBadge.classList.remove('hidden');
+    }
+}
+
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 // --- VİDEO KARTI YÖNETİMİ ---
@@ -57,16 +103,13 @@ export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
     video.autoplay = true;
     video.playsInline = true;
 
-    // Aynalama (Sadece lokal kamera ve ayar açıksa)
+    // Aynalama: Sadece kamera ve ayar açıksa
     if (isLocal && !isScreen && state.isMirrored) video.classList.add('mirrored');
 
     // Ses Kontrolü
-    if (isLocal) {
-        video.muted = true; 
-    } else {
-        if (state.isDeafened) video.muted = true;
-        else video.muted = false;
-    }
+    if (isLocal) video.muted = true;
+    else if (state.isDeafened) video.muted = true;
+    else video.muted = false;
 
     const expandBtn = document.createElement('button');
     expandBtn.className = 'btn-expand';
@@ -75,18 +118,16 @@ export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
 
     const nameTag = document.createElement('div');
     nameTag.className = 'name-tag';
-    nameTag.id = `name-${cardId}`; 
+    nameTag.id = `name-${cardId}`;
     nameTag.innerHTML = name + (isScreen ? " (Ekran)" : "");
 
-    // Avatar (Kamera kapalıysa)
+    // Avatar (Kamera kapalıyken)
     if (!isScreen) {
         const avatar = document.createElement('div');
         avatar.className = 'avatar-overlay';
         
         // Eğer kullanıcı Google ile girdiyse ve profil resmi varsa
-        // Not: Şu an state.userProfile sadece Local kullanıcıda var.
-        // Mesh ağında profil resmi datası 'name' ile birlikte gönderilmelidir.
-        // Şimdilik sadece Local kullanıcı için resim gösterelim, diğerleri harf.
+        // (Şu an sadece local kullanıcıda userProfile var, remote için name gönderiliyor)
         if(isLocal && state.userProfile && state.userProfile.photo) {
              avatar.innerHTML = `<img src="${state.userProfile.photo}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">`;
         } else {
@@ -121,7 +162,7 @@ export function removeVideoCard(peerId, isScreen = false) {
     }
 }
 
-// --- FİLM ŞERİDİ (FOCUS MODE) MANTIĞI ---
+// --- FİLM ŞERİDİ (FOCUS MODE) ---
 function toggleFocusMode(selectedCard) {
     if (!isFocusMode) {
         isFocusMode = true;
@@ -134,7 +175,7 @@ function toggleFocusMode(selectedCard) {
         strip.className = 'filmstrip-overlay';
         document.getElementById('video-stage').appendChild(strip);
 
-        // Seçilmeyenleri oraya taşı
+        // Diğerlerini taşı
         Array.from(videoGrid.children).forEach(child => {
             if (child.classList.contains('video-card') && !child.classList.contains('featured')) {
                 strip.appendChild(child);
@@ -142,7 +183,7 @@ function toggleFocusMode(selectedCard) {
             }
         });
 
-        // Butonu değiştir
+        // Buton değiştir
         const btn = selectedCard.querySelector('.btn-expand');
         if(btn) {
             btn.innerHTML = '<i class="fa-solid fa-compress"></i>';
@@ -186,7 +227,6 @@ function swapFeatured(newCard) {
     const currentFeatured = videoGrid.querySelector('.featured');
 
     if (currentFeatured && strip) {
-        // Eskiyi küçült, şeride at
         currentFeatured.classList.remove('featured');
         const btn1 = currentFeatured.querySelector('.btn-expand');
         if(btn1) {
@@ -196,7 +236,6 @@ function swapFeatured(newCard) {
         currentFeatured.onclick = () => swapFeatured(currentFeatured);
         strip.appendChild(currentFeatured);
 
-        // Yeniyi büyüt, grid'e al
         videoGrid.appendChild(newCard); 
         newCard.classList.add('featured');
         newCard.onclick = null;
@@ -228,7 +267,7 @@ export function updateParticipantsUI() {
 function addParticipantRow(name, isMe) {
     const li = document.createElement('li');
     li.innerHTML = `
-        <div style="width:32px; height:32px; border-radius:50%; background:${isMe ? '#5865F2' : '#faa61a'}; color:white; display:flex; justify-content:center; align-items:center; font-weight:bold;">${name.charAt(0).toUpperCase()}</div>
+        <div class="user-avatar" style="background-color: ${isMe ? '#5865F2' : '#faa61a'}; width:32px; height:32px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold;">${name.charAt(0).toUpperCase()}</div>
         <span style="font-weight: 500; font-size: 0.9rem;">${name}</span>
     `;
     participantList.appendChild(li);
@@ -242,10 +281,8 @@ export function updateMyId(id) {
 export function updateNameTag(peerId, name) {
     let el = document.getElementById(`name-video-${peerId}`);
     if(el) el.innerText = name;
-    
     el = document.getElementById(`name-screen-${peerId}`);
     if(el) el.innerText = name + " (Ekran)";
-    
     const card = document.getElementById(`video-${peerId}`);
     if(card) {
         const av = card.querySelector('.avatar-circle');

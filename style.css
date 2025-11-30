@@ -1,15 +1,15 @@
 :root {
-    --bg-main: #000000;       /* Tam Siyah */
+    --bg-main: #000000;       /* Tam Siyah Arka Plan */
     --footer-bg: #121212;     /* Alt Bar */
     --card-bg: #1a1a1a;       /* Video Kartları */
-    --modal-bg: #2b2d31;      /* Modal Arkaplan */
-    --sidebar-bg: #1e1f22;    /* Ayarlar Sol Menü */
-    --primary: #ffffff;       /* Ana Metin */
-    --accent: #5865F2;        /* Vurgu (Mor) */
-    --danger: #ed4245;        /* Kırmızı */
-    --success: #23a559;       /* Yeşil */
-    --text-muted: #949ba4;
-    --border-radius: 12px;
+    --modal-bg: #2b2d31;      /* Modal (Discord Grisi) */
+    --sidebar-bg: #1e1f22;    /* Sidebar Koyu */
+    --primary: #ffffff;       /* Ana Metin Rengi */
+    --accent: #5865F2;        /* Vurgu Rengi (Mor) */
+    --danger: #ed4245;        /* Kırmızı (Çıkış/Kapat) */
+    --success: #23a559;       /* Yeşil (Aktif/Açık) */
+    --text-muted: #949ba4;    /* Soluk Metin */
+    --border-radius: 12px;    /* Yuvarlaklık */
 }
 
 body {
@@ -35,174 +35,87 @@ body {
 
 .hidden { display: none !important; }
 
-/* --- GİRİŞ EKRANI (LOGIN) --- */
-.login-overlay {
-    position: fixed; inset: 0;
-    background: var(--bg-main);
-    z-index: 5000;
-    display: flex; justify-content: center; align-items: center;
-}
-
-.login-card {
-    background: var(--card-bg);
-    padding: 40px;
-    border-radius: 12px;
-    width: 350px;
-    text-align: center;
-    border: 1px solid #333;
-}
-
-.login-header { margin-bottom: 20px; }
-.login-header i { font-size: 2rem; color: var(--accent); margin-bottom: 10px; display: block; }
-.login-header h2 { margin: 0; font-size: 1.5rem; }
-.login-desc { color: var(--text-muted); margin-bottom: 25px; font-size: 0.9rem; }
-
-/* Google Butonu */
-.btn-google {
-    width: 100%; padding: 12px; 
-    background: #ffffff; color: #3c4043;
-    border: 1px solid #dadce0; border-radius: 4px;
-    font-weight: bold; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; gap: 10px;
-    transition: 0.2s; margin-bottom: 10px;
-}
-.btn-google:hover { background: #f7f8f8; }
-
-.divider {
-    display: flex; align-items: center; text-align: center;
-    color: var(--text-muted); font-size: 0.8rem; margin: 20px 0;
-}
-.divider::before, .divider::after {
-    content: ''; flex: 1; border-bottom: 1px solid #333;
-}
-.divider span { padding: 0 10px; }
-
-/* Misafir Girişi */
-.input-wrapper {
-    background: #111; border: 1px solid #333;
-    border-radius: 4px; padding: 10px;
-    display: flex; align-items: center; gap: 10px; margin-bottom: 15px;
-}
-.input-wrapper input {
-    background: transparent; border: none; color: white;
-    width: 100%; outline: none;
-}
-.btn-primary {
-    width: 100%; padding: 12px;
-    background: var(--accent); color: white;
-    border: none; border-radius: 4px;
-    font-weight: bold; cursor: pointer;
-    transition: 0.2s;
-}
-.btn-primary:hover { background: #4752c4; }
-
-/* Welcome Back (Google) */
-.avatar-preview { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--accent); margin-bottom: 15px; object-fit: cover; }
-.welcome-user-text { font-size: 1.1rem; margin-bottom: 20px; font-weight: bold; }
-.btn-text { background: none; border: none; color: var(--text-muted); text-decoration: underline; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
-.btn-text:hover { color: white; }
-
-/* --- BAĞLANTI EKRANI (CONNECT OVERLAY) --- */
-.connect-overlay {
-    position: absolute; inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 50;
-    display: flex; justify-content: center; align-items: center;
-}
-.connect-box { text-align: center; max-width: 500px; padding: 20px; }
-.welcome-text { color: var(--text-muted); margin-bottom: 20px; }
-
-.user-status-bar { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; }
-.btn-logout-mini { background: #333; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.btn-logout-mini:hover { background: var(--danger); }
-
-.room-input-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
-.id-display {
-    background: #333; padding: 10px 15px; border-radius: 5px;
-    cursor: pointer; display: flex; align-items: center; gap: 10px;
-    font-family: monospace; border: 1px solid #444;
-}
-.id-display:hover { border-color: var(--accent); }
-#remote-id {
-    padding: 10px; background: #111; border: 1px solid #444;
-    color: white; border-radius: 5px; text-align: center;
-}
-.btn-join {
-    padding: 10px 20px; background: white; color: black;
-    border: none; border-radius: 5px; font-weight: bold; cursor: pointer;
-}
-#copy-feedback { font-size: 0.8rem; color: var(--success); opacity: 0; transition: 0.3s; }
-.fade-out { opacity: 0; }
-
-/* --- VİDEO ALANI --- */
+/* --- VİDEO ALANI (STAGE) --- */
 .video-stage {
     flex-grow: 1;
     position: relative;
     background-color: var(--bg-main);
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
-    width: 100%; height: calc(100% - 80px); /* Footer hariç */
+    width: 100%;
+    height: calc(100% - 80px); /* Footer yüksekliğini düşüyoruz */
 }
 
-/* Grid Modu */
+/* Grid Modu (Varsayılan) */
 .video-grid {
-    display: grid; gap: 15px; width: 100%; height: 100%; padding: 20px; box-sizing: border-box;
+    display: grid;
+    gap: 15px;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    /* Otomatik Sığdırma */
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     grid-auto-rows: minmax(300px, 1fr);
-    align-content: center; justify-content: center;
+    align-content: center;
+    justify-content: center;
 }
 
-/* Focus Modu (Tek Video) */
+/* Focus Modu (Tek Büyük Video) */
 .video-grid.focus-mode {
-    display: block; padding: 0; position: relative; width: 100%; height: 100%;
+    display: block; /* Grid iptal, absolute yerleşim */
+    padding: 0;
+    position: relative;
+    width: 100%;
+    height: 100%;
 }
 
-/* Yüzen Film Şeridi (Sağ Alt) */
-.filmstrip-overlay {
-    position: absolute; bottom: 20px; right: 20px; z-index: 100;
-    display: flex; gap: 10px; max-width: 80%;
-    overflow-x: auto; padding: 10px;
-    scrollbar-width: none; /* Firefox */
-}
-.filmstrip-overlay::-webkit-scrollbar { display: none; } /* Chrome */
-
-.filmstrip-overlay .video-card {
-    width: 240px; height: 135px; flex-shrink: 0;
-    background: #000; border: 2px solid #333;
-    border-radius: 8px; cursor: pointer;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.8);
-    transition: transform 0.2s, border-color 0.2s;
-}
-.filmstrip-overlay .video-card:hover {
-    transform: translateY(-5px); border-color: var(--accent);
-}
-
-/* --- VİDEO KARTI --- */
+/* KART TASARIMI */
 .video-card {
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    overflow: hidden; position: relative;
+    overflow: hidden;
+    position: relative;
     width: 100%; height: 100%;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    
+    /* GPU Hızlandırma (RAM Dostu) */
+    will-change: transform;
+    transform: translateZ(0);
 }
-.video-card video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+
+.video-card video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+}
+
+/* Aynalama Sınıfı */
 .video-card video.mirrored { transform: scaleX(-1); }
 
-/* Büyütülen Kart (Background) */
+/* Büyütülmüş Kart (Featured) */
 .video-card.featured {
     position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%; z-index: 1; border-radius: 0;
+    width: 100%; height: 100%;
+    z-index: 1; border-radius: 0;
 }
 
 /* İsim Etiketi */
 .name-tag {
     position: absolute; bottom: 10px; left: 10px;
-    background: rgba(0,0,0,0.6); padding: 4px 10px;
-    border-radius: 4px; font-size: 0.9rem; font-weight: 500;
-    pointer-events: none; z-index: 5;
+    background: rgba(0,0,0,0.6);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 5;
 }
 
-/* Büyütme Butonu */
+/* Büyütme Butonu (Expand) */
 .btn-expand {
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
@@ -213,26 +126,59 @@ body {
 }
 .video-card:hover .btn-expand { opacity: 1; }
 
-/* Avatar */
+/* Avatar (Kamera Kapalıyken) */
 .avatar-overlay {
-    position: absolute; inset: 0; background: var(--card-bg);
-    display: flex; justify-content: center; align-items: center; z-index: 2;
+    position: absolute; inset: 0;
+    background: var(--card-bg);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 2;
 }
 .avatar-circle {
-    width: 80px; height: 80px; background: #333; color: white;
+    width: 100px; height: 100px;
+    background: #333; color: white;
     border-radius: 50%; font-size: 2.5rem;
     display: flex; justify-content: center; align-items: center;
 }
 .video-active .avatar-overlay { display: none; }
 
-/* --- ALT KONTROL BARI --- */
+/* --- FİLM ŞERİDİ (SAĞ ALT KÖŞE - YÜZEN) --- */
+.filmstrip-overlay {
+    position: absolute; bottom: 20px; right: 20px;
+    z-index: 100; /* Videonun üstünde */
+    display: flex; gap: 10px;
+    max-width: 80%;
+    overflow-x: auto;
+    padding: 10px;
+    /* Scrollbar Gizleme */
+    scrollbar-width: none; 
+}
+.filmstrip-overlay::-webkit-scrollbar { display: none; }
+
+.filmstrip-overlay .video-card {
+    width: 240px; height: 135px; /* 16:9 Oran */
+    flex-shrink: 0;
+    background: #000;
+    border: 2px solid #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+}
+.filmstrip-overlay .video-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent);
+}
+
+/* --- ALT KONTROL BARI (FOOTER) --- */
 .bottom-bar {
-    height: 80px; background-color: var(--footer-bg);
+    height: 80px;
+    background-color: var(--footer-bg);
     display: flex; justify-content: space-between; align-items: center;
     padding: 0 30px; border-top: 1px solid #222;
     z-index: 200; position: relative;
 }
 
+/* Sol (Saat & ID) */
 .footer-left {
     display: flex; align-items: center; gap: 15px;
     font-family: monospace; font-size: 1.1rem; color: #ccc;
@@ -240,6 +186,7 @@ body {
 }
 .room-id-tag { font-weight: bold; color: white; letter-spacing: 1px; }
 
+/* Orta (Kontrol Butonları) */
 .footer-center { display: flex; gap: 15px; }
 .ctrl-btn {
     width: 50px; height: 50px; border-radius: 50%;
@@ -260,6 +207,7 @@ body {
 .btn-hangup:hover { background-color: #991b1b; }
 .btn-success { background: var(--success); border-color: var(--success); }
 
+/* Sağ (İkonlar) */
 .footer-right {
     display: flex; gap: 20px; align-items: center; justify-content: flex-end;
     min-width: 200px;
@@ -267,20 +215,22 @@ body {
 .icon-btn {
     background: transparent; border: none; color: white;
     font-size: 1.5rem; cursor: pointer; position: relative;
+    padding: 5px;
 }
+.icon-btn:hover { opacity: 0.8; }
 .badge {
     position: absolute; top: -5px; right: -5px;
     font-size: 0.7rem; background: var(--danger);
     padding: 2px 5px; border-radius: 10px;
 }
 
-/* --- SIDEBAR (KATILIMCILAR) --- */
+/* --- SIDEBARLAR (KATILIMCILAR & CHAT) --- */
 .side-panel {
     position: fixed; top: 0; right: -320px;
-    width: 300px; height: calc(100% - 80px);
+    width: 320px; height: calc(100% - 80px);
     background: #1e1e1e; border-left: 1px solid #333;
     z-index: 300; transition: right 0.3s ease-in-out;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: column; padding: 0;
     box-shadow: -5px 0 15px rgba(0,0,0,0.5);
 }
 .side-panel.open { right: 0; }
@@ -291,9 +241,79 @@ body {
 }
 .panel-content { padding: 10px; overflow-y: auto; flex-grow: 1; }
 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #aaa; }
-.user-list li {
-    padding: 15px 10px; border-bottom: 1px solid #2f2f2f;
-    display: flex; align-items: center; gap: 15px;
+.user-list li { padding: 15px 10px; border-bottom: 1px solid #2f2f2f; display: flex; align-items: center; gap: 15px; }
+
+/* --- CHAT STİLLERİ (GÜNCEL) --- */
+#chat-panel { background: #2b2d31; } /* Discord Grisi */
+
+.chat-content {
+    flex-grow: 1; padding: 15px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    background: #313338;
+}
+
+.chat-welcome {
+    text-align: center; color: #949ba4; font-size: 0.8rem;
+    margin-bottom: 10px; border-bottom: 1px solid #3f4147; padding-bottom: 10px;
+}
+
+.chat-input-area {
+    padding: 15px; background: #2b2d31;
+    display: flex; gap: 10px; border-top: 1px solid #1e1f22;
+}
+
+#chat-input {
+    flex-grow: 1; background: #383a40; border: none;
+    padding: 10px; border-radius: 8px; color: white; outline: none;
+}
+
+#send-btn {
+    background: var(--accent); color: white; border: none;
+    width: 40px; border-radius: 8px; cursor: pointer;
+    font-size: 1rem; transition: 0.2s;
+}
+#send-btn:hover { background: #4752c4; }
+
+/* MESAJ BALONLARI */
+.message {
+    display: flex; flex-direction: column;
+    max-width: 85%; font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.message-header {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;
+}
+.msg-sender { font-weight: bold; font-size: 0.85rem; color: white; }
+.msg-time { font-size: 0.7rem; color: #949ba4; }
+
+.msg-text {
+    padding: 8px 12px;
+    border-radius: 8px;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+/* Karşıdan Gelen Mesaj (SOL) */
+.message.theirs {
+    align-self: flex-start;
+}
+.message.theirs .msg-text {
+    background: #41434a;
+    color: #dbdee1;
+    border-radius: 0 12px 12px 12px;
+}
+
+/* Benim Mesajım (SAĞ) */
+.message.mine {
+    align-self: flex-end;
+    align-items: flex-end; /* İçeriği sağa daya */
+}
+.message.mine .msg-text {
+    background: var(--accent);
+    color: white;
+    border-radius: 12px 0 12px 12px;
+    text-align: left; /* Metin yine soldan aksın ama kutu sağda */
 }
 
 /* --- AYARLAR MODALI --- */
@@ -313,14 +333,13 @@ body {
     padding: 20px 10px; display: flex; flex-direction: column;
 }
 .settings-header-text {
-    padding: 0 10px 15px; font-size: 0.75rem;
-    font-weight: bold; color: var(--text-muted); letter-spacing: 1px;
+    padding: 0 10px 15px; font-size: 0.75rem; font-weight: bold;
+    color: var(--text-muted); letter-spacing: 1px;
 }
 .nav-btn {
     background: transparent; border: none; color: #b5bac1;
     padding: 12px 16px; text-align: left; cursor: pointer;
-    border-radius: 4px; font-size: 0.95rem; margin-bottom: 4px;
-    transition: 0.2s;
+    border-radius: 4px; font-size: 0.95rem; margin-bottom: 4px; transition: 0.2s;
 }
 .nav-btn:hover { background: #35373c; color: #dbdee1; }
 .nav-btn.active { background: #404249; color: #fff; font-weight: 500; }
@@ -344,10 +363,7 @@ body {
 
 .form-group { margin-bottom: 25px; }
 .form-group.row-group { display: flex; justify-content: space-between; align-items: center; }
-.form-group label {
-    display: block; margin-bottom: 8px; font-weight: 600;
-    font-size: 0.85rem; color: #b5bac1; text-transform: uppercase;
-}
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: #b5bac1; text-transform: uppercase; }
 .hint { font-size: 0.8rem; color: var(--text-muted); margin: 5px 0 0; }
 
 .custom-select { position: relative; width: 100%; }
@@ -399,5 +415,28 @@ body {
 }
 .btn-save:hover { background-color: #4752c4; }
 
+/* Login Ekstraları */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.login-overlay { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; justify-content: center; align-items: center; }
+.login-card { background: var(--card-bg); padding: 40px; border-radius: 12px; width: 350px; text-align: center; border: 1px solid #333; }
+.input-wrapper input { width: 100%; padding: 12px; margin: 20px 0; background: #111; border: 1px solid #333; color: white; border-radius: 4px; box-sizing: border-box; }
+.btn-primary { width: 100%; padding: 12px; background: var(--primary); color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+.connect-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 50; display: flex; justify-content: center; align-items: center; }
+.connect-box { text-align: center; max-width: 500px; }
+.room-input-group { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
+.id-display { background: #333; padding: 10px 15px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+.btn-join { padding: 10px 20px; background: white; color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+#remote-id { padding: 10px; background: #111; border: 1px solid #333; color: white; border-radius: 5px; }
 .close-modal-mobile { display: none; }
+.btn-google { width: 100%; padding: 12px; background: #ffffff; color: #3c4043; border: 1px solid #dadce0; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; margin-bottom: 10px; }
+.btn-google:hover { background: #f7f8f8; }
+.divider { display: flex; align-items: center; text-align: center; color: var(--text-muted); font-size: 0.8rem; margin: 20px 0; }
+.divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #333; }
+.divider span { padding: 0 10px; }
+.avatar-preview { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--accent); margin-bottom: 15px; object-fit: cover; }
+.welcome-user-text { font-size: 1.1rem; margin-bottom: 20px; font-weight: bold; }
+.btn-text { background: none; border: none; color: var(--text-muted); text-decoration: underline; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
+.btn-text:hover { color: white; }
+.user-status-bar { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; }
+.btn-logout-mini { background: #333; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.btn-logout-mini:hover { background: var(--danger); }

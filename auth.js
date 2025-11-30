@@ -5,9 +5,6 @@ import { state } from './state.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- BURAYA KENDİ FIREBASE AYARLARINI YAPIŞTIR ---
-// Firebase Console > Project Settings > General > Your apps kısmından alabilirsin.
-
 const firebaseConfig = {
   apiKey: "AIzaSyASvvDp6M0ov6JSAWL0RD3zPJYaBw4H3fs",
   authDomain: "pasamcord.firebaseapp.com",

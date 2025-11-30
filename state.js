@@ -1,13 +1,10 @@
 export const state = {
     myUsername: "Misafir",
-    // YENİ: Kullanıcı Profil Bilgileri (Avatar vb.)
-    userProfile: null, 
-
+    userProfile: null,
     localStream: null,
     localScreenStream: null,
     peer: null,
     peers: {}, 
-    
     lastHeartbeat: {}, 
     participantList: [],
 
@@ -20,5 +17,9 @@ export const state = {
     isCameraOff: true,
     isDeafened: false,
     isScreenSharing: false,
-    isMirrored: true
+    isMirrored: true,
+
+    // Yeni Kalite Ayarları
+    videoResolution: 1280, // Varsayılan HD Ready
+    videoFPS: 30
 };
