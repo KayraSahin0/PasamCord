@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { updateMyId, updateRoomId, addVideoCard, removeVideoCard, updateParticipantsUI, updateNameTag, showCallScreen, addMessageToUI } from './ui.js';
+import { updateMyId, updateRoomId, addVideoCard, removeVideoCard, updateParticipantsUI, updateNameTag, showCallScreen, addMessageToUI, loadYouTubeVideo, syncYouTubeAction } from './ui.js';
 
 export function initPeer() {
     const myId = Math.random().toString(36).substr(2, 5).toUpperCase();
@@ -22,21 +22,30 @@ export function initPeer() {
     state.peer.on('connection', (conn) => setupDataConnection(conn));
 }
 
-// --- CHAT FONKSİYONU ---
-export function sendChatMessage(text) {
-    const messageData = { type: 'chat', sender: state.myUsername, text: text };
-    
-    // Bağlı olan herkese gönder
+// --- VERİ GÖNDERME YARDIMCISI ---
+export function broadcastData(data) {
     Object.values(state.peers).forEach(p => {
-        if (p.conn && p.conn.open) {
-            p.conn.send(messageData);
-        }
+        if (p.conn && p.conn.open) p.conn.send(data);
     });
 }
 
-// ... (Geri kalan network.js kodları önceki ile aynıdır) ...
-// (Burada diğer fonksiyonları startHeartbeat, connectToPeer, handleCall vb. aynen koruyun)
+export function sendChatMessage(text) {
+    const data = { type: 'chat', sender: state.myUsername, text: text };
+    broadcastData(data);
+}
 
+export function sendYouTubeLoad(url) {
+    const data = { type: 'yt-load', url: url };
+    broadcastData(data);
+}
+
+export function sendYouTubeAction(action, time) {
+    const data = { type: 'yt-action', action: action, time: time };
+    broadcastData(data);
+}
+
+// ... (startHeartbeat, connectToPeer, handleCall vb. AYNI) ...
+// (Lütfen önceki network.js dosyasından buraya kadar olan standart bağlantı fonksiyonlarını kopyalayın)
 // EKSİKSİZ OLMASI İÇİN TEKRAR YAZIYORUM:
 
 function startHeartbeat() {
@@ -131,16 +140,20 @@ function setupDataConnection(conn) {
     });
 
     conn.on('data', (data) => {
-        if (data.type === 'heartbeat') {
-            state.lastHeartbeat[conn.peer] = Date.now();
-            return;
-        }
+        if (data.type === 'heartbeat') { state.lastHeartbeat[conn.peer] = Date.now(); return; }
         
-        // CHAT MESAJI ALINDIĞINDA
-        if (data.type === 'chat') {
-            addMessageToUI(data.sender, data.text, false);
+        // CHAT
+        if (data.type === 'chat') addMessageToUI(data.sender, data.text, false);
+
+        // YOUTUBE SYNC
+        if (data.type === 'yt-load') {
+            loadYouTubeVideo(data.url, false); // false = remote trigger
+        }
+        if (data.type === 'yt-action') {
+            syncYouTubeAction(data.action, data.time);
         }
 
+        // STANDART İŞLEMLER
         if (data.type === 'name') {
             if (state.peers[conn.peer]) {
                 state.peers[conn.peer].name = data.name;

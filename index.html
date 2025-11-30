@@ -8,15 +8,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="./logoPic/logo.png">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
 
     <div id="login-screen" class="login-overlay">
         <div class="login-card">
             <div class="login-header">
-            <img src="./logoPic/logo.png" alt="PasamCord Logo" class="app-logo">
-            <h2>PasamCord</h2>
-        </div>
+                <img src="./logoPic/logo.png" alt="PasamCord" class="app-logo">
+                <h2>PasamCord</h2>
+            </div>
             
             <button class="btn-google" onclick="window.handleGoogleLogin()">
                 <i class="fa-brands fa-google"></i> Google ile Devam Et
@@ -87,6 +88,15 @@
                 <button class="ctrl-btn" id="screen-btn" onclick="window.toggleScreenShare()" title="Ekran Paylaş">
                     <i class="fa-solid fa-desktop" id="screen-icon"></i>
                 </button>
+                
+                <button class="ctrl-btn btn-spotify" onclick="window.startSpotifyShare()" title="Spotify">
+                    <i class="fa-brands fa-spotify"></i>
+                </button>
+
+                <button class="ctrl-btn btn-youtube" onclick="window.toggleYouTube()" title="YouTube">
+                    <i class="fa-brands fa-youtube"></i>
+                </button>
+
                 <button class="ctrl-btn" id="deafen-btn" onclick="window.toggleDeafen()" title="Sesi Kapat">
                     <i class="fa-solid fa-headphones" id="deafen-icon"></i>
                 </button>
@@ -115,9 +125,7 @@
             <h3>Katılımcılar</h3>
             <button class="close-btn" onclick="window.toggleParticipants()">&times;</button>
         </div>
-        <div class="panel-content">
-            <ul class="user-list" id="participant-list"></ul>
-        </div>
+        <div class="panel-content"><ul class="user-list" id="participant-list"></ul></div>
     </div>
 
     <div class="side-panel" id="chat-panel">
@@ -126,13 +134,45 @@
             <button class="close-btn" onclick="window.toggleChat()">&times;</button>
         </div>
         <div class="chat-content" id="chat-content">
-            <div class="chat-welcome">
-                <p>Buraya gönderilen mesajlar oda kapandığında silinir.</p>
-            </div>
+            <div class="chat-welcome"><p>Buraya gönderilen mesajlar oda kapandığında silinir.</p></div>
         </div>
         <div class="chat-input-area">
             <input type="text" id="chat-input" placeholder="Bir mesaj yaz..." autocomplete="off">
             <button id="send-btn" onclick="window.sendChat()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <div class="side-panel youtube-panel" id="youtube-panel">
+        <div class="panel-header" style="background: #c4302b;">
+            <h3 style="color:white;"><i class="fa-brands fa-youtube"></i> YouTube İzle</h3>
+            <button class="close-btn" onclick="window.toggleYouTube()" style="color:white;">&times;</button>
+        </div>
+        <div class="youtube-content">
+            <div class="yt-input-group">
+                <input type="text" id="yt-url-input" placeholder="YouTube Video Linki">
+                <button onclick="window.loadYouTubeVideo()">Aç</button>
+            </div>
+            <div id="youtube-player-container"><div id="player"></div></div>
+            <p class="yt-hint">Video herkes için senkronize çalışır.</p>
+        </div>
+    </div>
+
+    <div id="spotify-guide-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="width: 450px;">
+            <div class="modal-header" style="background: #1DB954;">
+                <h3 style="color:white;"><i class="fa-brands fa-spotify"></i> Spotify Paylaşımı</h3>
+                <button onclick="document.getElementById('spotify-guide-modal').classList.add('hidden')" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:15px;">Müziği diğerlerine dinletmek için:</p>
+                <ul style="text-align: left; margin: 0 20px; color: #ccc; line-height: 1.6;">
+                    <li><strong>Web Player:</strong> Chrome Sekmesi > Spotify > Sesi Paylaş.</li>
+                    <li><strong>Masaüstü Uygulaması:</strong> Tüm Ekran > Sesi Paylaş. (Uygulama penceresi seçerseniz ses gitmez!)</li>
+                </ul>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn-primary" style="background: #1DB954; color: white;" onclick="window.confirmSpotifyShare()">Anladım, Paylaş</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -151,76 +191,28 @@
                 
                 <div id="tab-devices" class="tab-pane active">
                     <h3 class="tab-title">Cihaz Ayarları</h3>
-                    <div class="form-group">
-                        <label>Mikrofon</label>
-                        <div class="custom-select"><select id="audio-input-select" onchange="window.changeAudioInput()"></select><i class="fa-solid fa-chevron-down"></i></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Kamera</label>
-                        <div class="custom-select"><select id="video-input-select" onchange="window.changeVideoInput()"></select><i class="fa-solid fa-chevron-down"></i></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Çıkış Cihazı (Hoparlör)</label>
-                        <div class="custom-select"><select id="audio-output-select" onchange="window.changeAudioOutput()"></select><i class="fa-solid fa-chevron-down"></i></div>
-                    </div>
+                    <div class="form-group"><label>Mikrofon</label><div class="custom-select"><select id="audio-input-select" onchange="window.changeAudioInput()"></select><i class="fa-solid fa-chevron-down"></i></div></div>
+                    <div class="form-group"><label>Kamera</label><div class="custom-select"><select id="video-input-select" onchange="window.changeVideoInput()"></select><i class="fa-solid fa-chevron-down"></i></div></div>
+                    <div class="form-group"><label>Çıkış Cihazı (Hoparlör)</label><div class="custom-select"><select id="audio-output-select" onchange="window.changeAudioOutput()"></select><i class="fa-solid fa-chevron-down"></i></div></div>
                 </div>
-
                 <div id="tab-quality" class="tab-pane">
                     <h3 class="tab-title">Görüntü Kalitesi</h3>
-                    <div class="form-group">
-                        <label>Çözünürlük</label>
-                        <div class="custom-select">
-                            <select id="video-resolution" onchange="window.changeVideoQuality()">
-                                <option value="320">Düşük (320x240)</option>
-                                <option value="640">Standart (640x480)</option>
-                                <option value="1280" selected>HD Ready (1280x720)</option>
-                                <option value="1920">Full HD (1920x1080)</option>
-                            </select>
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Kare Hızı (FPS)</label>
-                        <div class="custom-select">
-                            <select id="video-fps" onchange="window.changeVideoQuality()">
-                                <option value="24">24 FPS</option>
-                                <option value="30" selected>30 FPS</option>
-                                <option value="60">60 FPS</option>
-                            </select>
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-                    </div>
+                    <div class="form-group"><label>Çözünürlük</label><div class="custom-select"><select id="video-resolution" onchange="window.changeVideoQuality()"><option value="320">Düşük</option><option value="640">Standart</option><option value="1280" selected>HD Ready</option><option value="1920">Full HD</option></select><i class="fa-solid fa-chevron-down"></i></div></div>
+                    <div class="form-group"><label>Kare Hızı (FPS)</label><div class="custom-select"><select id="video-fps" onchange="window.changeVideoQuality()"><option value="24">24 FPS</option><option value="30" selected>30 FPS</option><option value="60">60 FPS</option></select><i class="fa-solid fa-chevron-down"></i></div></div>
                 </div>
-
                 <div id="tab-audio" class="tab-pane">
                     <h3 class="tab-title">Ses Kontrolleri</h3>
-                    <div class="form-group">
-                        <label>Gelen Ses Şiddeti</label>
-                        <input type="range" class="styled-slider" min="0" max="1" step="0.1" value="1" oninput="window.changeOutputVolume(this.value)">
-                    </div>
-                    <div class="form-group">
-                        <label>Mikrofon Hassasiyeti</label>
-                        <input type="range" class="styled-slider" min="-1" max="1" step="0.1" value="0" oninput="window.changeMicGain(this.value)">
-                    </div>
+                    <div class="form-group"><label>Gelen Ses</label><input type="range" class="styled-slider" min="0" max="1" step="0.1" value="1" oninput="window.changeOutputVolume(this.value)"></div>
+                    <div class="form-group"><label>Mikrofon Hassasiyeti</label><input type="range" class="styled-slider" min="-1" max="1" step="0.1" value="0" oninput="window.changeMicGain(this.value)"></div>
                 </div>
-
                 <div id="tab-video" class="tab-pane">
                     <h3 class="tab-title">Görünüm Ayarları</h3>
                     <div class="form-group row-group">
-                        <div class="text-group">
-                            <label>Kamerayı Aynala</label>
-                            <p class="hint">Önizlemenizi ters çevirir.</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="mirror-check" checked onchange="window.toggleMirrorSetting(this.checked)">
-                            <span class="slider"></span>
-                        </label>
+                        <div class="text-group"><label>Kamerayı Aynala</label><p class="hint">Önizlemenizi ters çevirir.</p></div>
+                        <label class="toggle-switch"><input type="checkbox" id="mirror-check" checked onchange="window.toggleMirrorSetting(this.checked)"><span class="slider"></span></label>
                     </div>
                 </div>
-
-                <div class="settings-footer">
-                    <button class="btn-save" onclick="window.toggleSettings()">Kaydet ve Kapat</button>
-                </div>
+                <div class="settings-footer"><button class="btn-save" onclick="window.toggleSettings()">Kaydet ve Kapat</button></div>
             </div>
         </div>
     </div>

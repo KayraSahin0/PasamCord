@@ -35,28 +35,12 @@ body {
 
 .hidden { display: none !important; }
 
-/* Logo Resim Ayarları */
+/* LOGO */
 .app-logo {
-    width: 80px;  /* Genişlik isteğe göre artırılabilir */
-    height: 80px; /* Yükseklik */
-    object-fit: contain; /* Resmi bozmadan sığdırır */
-    margin-bottom: 10px; /* Başlık ile arasına boşluk koyar */
-    border-radius: 12px; /* Köşeleri hafif yuvarlar */
-}
-
-/* Giriş başlığı düzeni */
-.login-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
-.login-header h2 {
-    margin: 5px 0 0 0;
-    font-size: 1.8rem;
-    color: var(--primary);
+    width: 80px; height: 80px;
+    object-fit: contain;
+    margin-bottom: 15px;
+    border-radius: 12px;
 }
 
 /* --- VİDEO ALANI (STAGE) --- */
@@ -173,7 +157,6 @@ body {
     max-width: 80%;
     overflow-x: auto;
     padding: 10px;
-    /* Scrollbar Gizleme */
     scrollbar-width: none; 
 }
 .filmstrip-overlay::-webkit-scrollbar { display: none; }
@@ -231,6 +214,13 @@ body {
 .btn-hangup:hover { background-color: #991b1b; }
 .btn-success { background: var(--success); border-color: var(--success); }
 
+/* Spotify ve YouTube Butonları */
+.btn-spotify { background-color: #1DB954 !important; border-color: #1DB954 !important; color: white !important; }
+.btn-spotify:hover { background-color: #1ed760 !important; transform: scale(1.05); }
+
+.btn-youtube { background-color: #FF0000 !important; border-color: #FF0000 !important; color: white !important; }
+.btn-youtube:hover { background-color: #ff3333 !important; transform: scale(1.05); }
+
 /* Sağ (İkonlar) */
 .footer-right {
     display: flex; gap: 20px; align-items: center; justify-content: flex-end;
@@ -267,12 +257,12 @@ body {
 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #aaa; }
 .user-list li { padding: 15px 10px; border-bottom: 1px solid #2f2f2f; display: flex; align-items: center; gap: 15px; }
 
-/* --- CHAT STİLLERİ (GÜNCEL) --- */
+/* CHAT CSS (GÜNCEL & DÜZELTİLMİŞ) */
 #chat-panel { background: #2b2d31; } /* Discord Grisi */
 
 .chat-content {
     flex-grow: 1; padding: 15px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 10px;
+    display: flex; flex-direction: column; gap: 15px; /* Mesajlar arası boşluk */
     background: #313338;
 }
 
@@ -312,7 +302,7 @@ body {
 .msg-time { font-size: 0.7rem; color: #949ba4; }
 
 .msg-text {
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: 8px;
     line-height: 1.4;
     word-wrap: break-word;
@@ -337,10 +327,28 @@ body {
     background: var(--accent);
     color: white;
     border-radius: 12px 0 12px 12px;
-    text-align: left; /* Metin yine soldan aksın ama kutu sağda */
+    text-align: left; /* Metin sola dayalı okunur */
 }
 
-/* --- AYARLAR MODALI --- */
+/* YOUTUBE PANELİ (Düzeltilmiş) */
+#youtube-panel {
+    width: 400px;
+    right: -420px; /* Başlangıçta gizli */
+    background: #0f0f0f;
+    border-left: 1px solid #333;
+}
+/* Open sınıfı tüm paneller için ortak */
+.side-panel.open { right: 0 !important; }
+
+.youtube-content { padding: 15px; display: flex; flex-direction: column; height: 100%; }
+.yt-input-group { display: flex; gap: 5px; margin-bottom: 15px; }
+.yt-input-group input { flex: 1; padding: 8px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; }
+.yt-input-group button { padding: 8px 12px; background: #FF0000; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+#youtube-player-container { width: 100%; aspect-ratio: 16/9; background: black; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+#player { width: 100%; height: 100%; }
+.yt-hint { font-size: 0.8rem; color: #aaa; text-align: center; margin-top: 10px; }
+
+/* AYARLAR MODALI */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.8);
     z-index: 6000; display: flex; justify-content: center; align-items: center;
@@ -439,8 +447,7 @@ body {
 }
 .btn-save:hover { background-color: #4752c4; }
 
-/* Login Ekstraları */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+/* GİRİŞ EKRANI */
 .login-overlay { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; justify-content: center; align-items: center; }
 .login-card { background: var(--card-bg); padding: 40px; border-radius: 12px; width: 350px; text-align: center; border: 1px solid #333; }
 .input-wrapper input { width: 100%; padding: 12px; margin: 20px 0; background: #111; border: 1px solid #333; color: white; border-radius: 4px; box-sizing: border-box; }
@@ -464,3 +471,10 @@ body {
 .user-status-bar { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; }
 .btn-logout-mini { background: #333; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .btn-logout-mini:hover { background: var(--danger); }
+.modal-box { background: var(--card-bg); padding: 20px; border-radius: 12px; color: white; position: relative; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-radius: 8px 8px 0 0; }
+.close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+.modal-body { padding: 20px; }
+.modal-body ul { padding-left: 20px; }
+.modal-body li { margin-bottom: 10px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

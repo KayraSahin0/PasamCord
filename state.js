@@ -19,7 +19,10 @@ export const state = {
     isScreenSharing: false,
     isMirrored: true,
 
-    // Yeni Kalite Ayarları
-    videoResolution: 1280, // Varsayılan HD Ready
-    videoFPS: 30
+    videoResolution: 1280,
+    videoFPS: 30,
+
+    // YouTube State
+    youtubePlayer: null,
+    isYoutubeOpen: false
 };
