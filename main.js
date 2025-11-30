@@ -4,9 +4,11 @@ import * as Audio from './audio.js';
 import * as Network from './network.js';
 import * as Auth from './auth.js';
 
+// --- GİRİŞ VE BAŞLATMA ---
 window.addEventListener('DOMContentLoaded', () => {
     const chatInput = document.getElementById('chat-input');
     if(chatInput) { chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') window.sendChat(); }); }
+    
     Auth.checkAuthState((isLoggedIn, user) => {
         if (isLoggedIn) {
             state.myUsername = user.displayName;
@@ -25,10 +27,20 @@ window.addEventListener('DOMContentLoaded', () => {
 window.handleGoogleLogin = async function() { const user = await Auth.loginWithGoogle(); if (user) { state.myUsername = user.displayName; window.startSession(); } };
 window.handleGuestLogin = function() { const input = document.getElementById('username-input'); if (!input.value.trim()) return alert("Lütfen bir isim girin."); state.myUsername = input.value.trim(); window.startSession(); };
 window.handleLogout = function() { Auth.logoutUser(); };
-window.startSession = async function() { const success = await Audio.initAudioVideo(); if(success) { UI.showAppScreen(); Network.initPeer(); startTimer(); } };
+
+window.startSession = async function() {
+    const success = await Audio.initAudioVideo();
+    if(success) {
+        UI.showAppScreen();
+        Network.initPeer();
+        startTimer();
+    }
+};
+
 window.startCall = function() { const idInput = document.getElementById('remote-id'); const remoteId = idInput.value.trim().toUpperCase().replace('#', ''); Network.connectToPeer(remoteId); };
 window.endCall = function() { Network.closeAllConnections(); UI.resetScreens(); };
 
+// --- KONTROLLER ---
 window.toggleMute = function() {
     if (!state.localStream) return; const track = state.localStream.getAudioTracks()[0]; track.enabled = !track.enabled; state.isMuted = !track.enabled;
     const btn = document.getElementById('mute-btn'); const icon = document.getElementById('mute-icon');
@@ -58,7 +70,7 @@ window.toggleScreenShare = async function() {
     }
 };
 
-window.toggleChat = function() { const pPanel = document.getElementById('participants-panel'); if(pPanel.classList.contains('open')) pPanel.classList.remove('open'); UI.toggleChatPanel(); };
+window.toggleChat = function() { UI.toggleChatPanel(); };
 window.sendChat = function() { const input = document.getElementById('chat-input'); const text = input.value.trim(); if (text) { UI.addMessageToUI("Ben", text, true); Network.sendChatMessage(text); input.value = ""; } };
 window.startSpotifyShare = function() { document.getElementById('spotify-guide-modal').classList.remove('hidden'); };
 window.confirmSpotifyShare = async function() { document.getElementById('spotify-guide-modal').classList.add('hidden'); if (!state.isScreenSharing) window.toggleScreenShare(); };

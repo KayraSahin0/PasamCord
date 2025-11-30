@@ -8,6 +8,7 @@ const chatPanel = document.getElementById('chat-panel');
 const chatContent = document.getElementById('chat-content');
 const chatBadge = document.getElementById('chat-badge');
 const youtubePanel = document.getElementById('youtube-panel');
+const adOverlay = document.getElementById('ad-wait-overlay');
 
 let isFocusMode = false;
 let isRemoteUpdate = false;
@@ -32,18 +33,16 @@ export function updateRoomId(id) {
 
 export function resetScreens() { window.location.reload(); }
 
-// --- AYARLAR SEKME YÖNETİMİ ---
+// --- AYARLAR SEKME ---
 export function openSettingsTab(tabName) {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-    
     document.getElementById(`tab-${tabName}`).classList.add('active');
-    
     const btns = Array.from(document.querySelectorAll('.nav-btn'));
     const target = btns.find(b => {
-        if(tabName === 'devices') return b.innerText.includes('Ses ve Görüntü');
+        if(tabName === 'devices') return b.innerText.includes('Ses');
         if(tabName === 'quality') return b.innerText.includes('Kalite');
-        if(tabName === 'audio') return b.innerText.includes('Ses Düzeyleri');
+        if(tabName === 'audio') return b.innerText.includes('Düzeyleri');
         if(tabName === 'video') return b.innerText.includes('Görünüm');
     });
     if(target) target.classList.add('active');
@@ -51,9 +50,11 @@ export function openSettingsTab(tabName) {
 
 // --- CHAT PANELİ ---
 export function toggleChatPanel() {
-    if (youtubePanel.classList.contains('open')) youtubePanel.classList.remove('open');
     chatPanel.classList.toggle('open');
-    if (chatPanel.classList.contains('open') && chatBadge) chatBadge.classList.add('hidden');
+    if (chatPanel.classList.contains('open')) {
+        chatBadge.classList.add('hidden');
+    }
+    updateLayout(); // Panellerin konumunu güncelle
 }
 
 export function addMessageToUI(sender, text, isMe) {
@@ -68,13 +69,27 @@ export function addMessageToUI(sender, text, isMe) {
 
 function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
-// --- YOUTUBE ---
+// --- YOUTUBE PANELİ ---
 export function toggleYouTubePanel() {
-    if (chatPanel.classList.contains('open')) chatPanel.classList.remove('open');
     const pPanel = document.getElementById('participants-panel');
     if(pPanel.classList.contains('open')) pPanel.classList.remove('open');
+    
     youtubePanel.classList.toggle('open');
+    updateLayout(); // Konum güncelle
+
     if (!state.youtubePlayer && window.YT) initYouTubePlayer();
+}
+
+// Panel Konumlarını Ayarla (Yan Yana)
+function updateLayout() {
+    const isChatOpen = chatPanel.classList.contains('open');
+    const isYTOpen = youtubePanel.classList.contains('open');
+
+    if (isChatOpen && isYTOpen) {
+        youtubePanel.classList.add('shifted'); // Sola kaydır
+    } else {
+        youtubePanel.classList.remove('shifted');
+    }
 }
 
 function initYouTubePlayer() {
@@ -83,11 +98,38 @@ function initYouTubePlayer() {
         playerVars: { 'autoplay': 1, 'controls': 1 },
         events: { 'onStateChange': onPlayerStateChange }
     });
+    // Reklam kontrolünü başlat
+    setInterval(checkYouTubeAds, 1000);
+}
+
+// --- YOUTUBE REKLAM KONTROLÜ (GÜNCEL) ---
+function checkYouTubeAds() {
+    if (!state.youtubePlayer || !state.youtubePlayer.getDuration) return;
+
+    const duration = state.youtubePlayer.getDuration();
+    // Eğer video süresi aniden çok kısa olursa (örn 15sn) ve ana video değilse, bu reklamdır.
+    // Ancak en güvenilir yöntem: Eğer biz oynatıyorsak ve PlayerState PLAYING ise ama current time ilerlemiyorsa veya Duration değiştiyse.
+    // Basit çözüm: Eğer biri "Ad" sinyali yollarsa overlay göster.
+}
+
+export function showAdOverlay(username) {
+    document.getElementById('ad-user-name').innerText = username;
+    adOverlay.classList.remove('hidden');
+}
+
+export function hideAdOverlay() {
+    adOverlay.classList.add('hidden');
 }
 
 function onPlayerStateChange(event) {
     if (isRemoteUpdate) return;
     const time = state.youtubePlayer.getCurrentTime();
+    
+    // REKLAM ALGILAMA (Basit)
+    // Eğer state UNSTARTED (-1) ise ve biz video başlatmışsak, araya reklam girmiş olabilir.
+    // Veya video süresi aniden değişirse.
+    // Şimdilik sadece Play/Pause senkronizasyonu:
+    
     if (event.data == YT.PlayerState.PLAYING) Network.sendYouTubeAction('play', time);
     else if (event.data == YT.PlayerState.PAUSED) Network.sendYouTubeAction('pause', time);
 }
@@ -98,7 +140,7 @@ export function loadYouTubeVideo(url, isLocal = true) {
     else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1];
     
     if (!videoId) return;
-    if (!youtubePanel.classList.contains('open')) youtubePanel.classList.add('open');
+    if (!youtubePanel.classList.contains('open')) toggleYouTubePanel();
 
     if (!state.youtubePlayer) {
         if(!window.YT) { setTimeout(() => loadYouTubeVideo(url, isLocal), 1000); return; }
@@ -119,10 +161,13 @@ export function syncYouTubeAction(action, time) {
     if (diff > 2) state.youtubePlayer.seekTo(time);
     if (action === 'play') state.youtubePlayer.playVideo();
     else if (action === 'pause') state.youtubePlayer.pauseVideo();
+    else if (action === 'ad-start') showAdOverlay("Birisi");
+    else if (action === 'ad-end') hideAdOverlay();
+    
     setTimeout(() => { isRemoteUpdate = false; }, 500);
 }
 
-// --- VİDEO KARTLARI ---
+// --- VİDEO KARTI YÖNETİMİ ---
 export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
     let cardId = isLocal ? (isScreen ? 'screen-local' : 'video-local') : (isScreen ? `screen-${peerId}` : `video-${peerId}`);
     if (document.getElementById(cardId)) return;
@@ -163,7 +208,7 @@ export function removeVideoCard(peerId, isScreen = false) {
     if (card) { if (card.classList.contains('featured')) exitFocusMode(); card.remove(); }
 }
 
-// --- FILMSTRIP (FOCUS MODE) ---
+// --- FİLM ŞERİDİ (FOCUS MODE) ---
 function toggleFocusMode(selectedCard) {
     if (!isFocusMode) {
         isFocusMode = true; videoGrid.classList.add('focus-mode'); selectedCard.classList.add('featured');

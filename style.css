@@ -1,3 +1,4 @@
+/* --- TEMEL DEĞİŞKENLER --- */
 :root {
     --bg-main: #000000;       /* Tam Siyah Arka Plan */
     --footer-bg: #121212;     /* Alt Bar */
@@ -35,7 +36,7 @@ body {
 
 .hidden { display: none !important; }
 
-/* LOGO */
+/* --- LOGO --- */
 .app-logo {
     width: 80px; height: 80px;
     object-fit: contain;
@@ -80,7 +81,7 @@ body {
     height: 100%;
 }
 
-/* KART TASARIMI */
+/* --- KART TASARIMI --- */
 .video-card {
     background: var(--card-bg);
     border-radius: var(--border-radius);
@@ -104,7 +105,7 @@ body {
 /* Aynalama Sınıfı */
 .video-card video.mirrored { transform: scaleX(-1); }
 
-/* Büyütülmüş Kart (Featured) */
+/* Büyütülmüş Kart (Featured) - Tam Ekran */
 .video-card.featured {
     position: absolute; top: 0; left: 0;
     width: 100%; height: 100%;
@@ -157,6 +158,7 @@ body {
     max-width: 80%;
     overflow-x: auto;
     padding: 10px;
+    /* Scrollbar Gizleme */
     scrollbar-width: none; 
 }
 .filmstrip-overlay::-webkit-scrollbar { display: none; }
@@ -239,6 +241,7 @@ body {
 }
 
 /* --- SIDEBARLAR (KATILIMCILAR & CHAT) --- */
+/* Genel Panel Özellikleri */
 .side-panel {
     position: fixed; top: 0; right: -320px;
     width: 320px; height: calc(100% - 80px);
@@ -247,8 +250,11 @@ body {
     display: flex; flex-direction: column; padding: 0;
     box-shadow: -5px 0 15px rgba(0,0,0,0.5);
 }
-.side-panel.open { right: 0; }
 
+/* Paneli Açma Sınıfı */
+.side-panel.open { right: 0 !important; }
+
+/* Header ve İçerik */
 .panel-header {
     padding: 20px; display: flex; justify-content: space-between;
     align-items: center; border-bottom: 1px solid #333; background: #252525;
@@ -257,12 +263,34 @@ body {
 .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #aaa; }
 .user-list li { padding: 15px 10px; border-bottom: 1px solid #2f2f2f; display: flex; align-items: center; gap: 15px; }
 
-/* CHAT CSS (GÜNCEL & DÜZELTİLMİŞ) */
+/* --- YOUTUBE PANELİ --- */
+/* Normal side-panel özelliklerini alır ama daha geniştir */
+#youtube-panel {
+    width: 400px;
+    right: -420px; /* Başlangıçta gizli */
+    background: #0f0f0f; /* YouTube siyahı */
+    border-left: 1px solid #333;
+}
+
+/* Yan yana açılma efekti için (Sola kaydırma) */
+.youtube-panel.shifted {
+    right: 320px !important; /* Chat'in solunda dur */
+}
+
+.youtube-content { padding: 15px; display: flex; flex-direction: column; height: 100%; }
+.yt-input-group { display: flex; gap: 5px; margin-bottom: 15px; }
+.yt-input-group input { flex: 1; padding: 8px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; }
+.yt-input-group button { padding: 8px 12px; background: #FF0000; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+#youtube-player-container { width: 100%; aspect-ratio: 16/9; background: black; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+#player { width: 100%; height: 100%; }
+.yt-hint { font-size: 0.8rem; color: #aaa; text-align: center; margin-top: 10px; }
+
+/* --- CHAT STİLLERİ --- */
 #chat-panel { background: #2b2d31; } /* Discord Grisi */
 
 .chat-content {
     flex-grow: 1; padding: 15px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 15px; /* Mesajlar arası boşluk */
+    display: flex; flex-direction: column; gap: 15px;
     background: #313338;
 }
 
@@ -288,7 +316,7 @@ body {
 }
 #send-btn:hover { background: #4752c4; }
 
-/* MESAJ BALONLARI */
+/* Mesaj Balonları */
 .message {
     display: flex; flex-direction: column;
     max-width: 85%; font-size: 0.9rem;
@@ -321,34 +349,16 @@ body {
 /* Benim Mesajım (SAĞ) */
 .message.mine {
     align-self: flex-end;
-    align-items: flex-end; /* İçeriği sağa daya */
+    align-items: flex-end;
 }
 .message.mine .msg-text {
     background: var(--accent);
     color: white;
     border-radius: 12px 0 12px 12px;
-    text-align: left; /* Metin sola dayalı okunur */
+    text-align: left;
 }
 
-/* YOUTUBE PANELİ (Düzeltilmiş) */
-#youtube-panel {
-    width: 400px;
-    right: -420px; /* Başlangıçta gizli */
-    background: #0f0f0f;
-    border-left: 1px solid #333;
-}
-/* Open sınıfı tüm paneller için ortak */
-.side-panel.open { right: 0 !important; }
-
-.youtube-content { padding: 15px; display: flex; flex-direction: column; height: 100%; }
-.yt-input-group { display: flex; gap: 5px; margin-bottom: 15px; }
-.yt-input-group input { flex: 1; padding: 8px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; }
-.yt-input-group button { padding: 8px 12px; background: #FF0000; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-#youtube-player-container { width: 100%; aspect-ratio: 16/9; background: black; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
-#player { width: 100%; height: 100%; }
-.yt-hint { font-size: 0.8rem; color: #aaa; text-align: center; margin-top: 10px; }
-
-/* AYARLAR MODALI */
+/* --- AYARLAR MODALI --- */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.8);
     z-index: 6000; display: flex; justify-content: center; align-items: center;
@@ -447,7 +457,7 @@ body {
 }
 .btn-save:hover { background-color: #4752c4; }
 
-/* GİRİŞ EKRANI */
+/* GİRİŞ EKRANI EKSTRALARI */
 .login-overlay { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; justify-content: center; align-items: center; }
 .login-card { background: var(--card-bg); padding: 40px; border-radius: 12px; width: 350px; text-align: center; border: 1px solid #333; }
 .input-wrapper input { width: 100%; padding: 12px; margin: 20px 0; background: #111; border: 1px solid #333; color: white; border-radius: 4px; box-sizing: border-box; }
@@ -475,6 +485,11 @@ body {
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-radius: 8px 8px 0 0; }
 .close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
 .modal-body { padding: 20px; }
-.modal-body ul { padding-left: 20px; }
-.modal-body li { margin-bottom: 10px; }
+.modal-body ul { padding-left: 20px; line-height: 1.6; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* AD WAIT (Reklam Bekleme) */
+.ad-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; justify-content: center; align-items: center; color: white; }
+.ad-content { text-align: center; }
+.loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--danger); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
