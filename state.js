@@ -1,13 +1,14 @@
 export const state = {
     myUsername: "Misafir",
+    // YENİ: Kullanıcı Profil Bilgileri (Avatar vb.)
+    userProfile: null, 
+
     localStream: null,
     localScreenStream: null,
     peer: null,
     peers: {}, 
     
-    // YENİ: Her kullanıcının son "kalp atışı" zamanını tutar
     lastHeartbeat: {}, 
-
     participantList: [],
 
     audioContext: null,

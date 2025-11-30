@@ -2,11 +2,53 @@ import { state } from './state.js';
 import * as UI from './ui.js';
 import * as Audio from './audio.js';
 import * as Network from './network.js';
+import * as Auth from './auth.js'; // Firebase
 
-window.loginUser = async function() {
+// SAYFA YÜKLENDİĞİNDE OTURUM KONTROLÜ
+window.addEventListener('DOMContentLoaded', () => {
+    Auth.checkAuthState((isLoggedIn, user) => {
+        if (isLoggedIn) {
+            // Google ile giriş yapılmış
+            state.myUsername = user.displayName;
+            // UI Güncelle
+            document.getElementById('guest-section').classList.add('hidden');
+            document.querySelector('.btn-google').classList.add('hidden');
+            document.querySelector('.divider').classList.add('hidden');
+            
+            const welcomeSec = document.getElementById('welcome-back-section');
+            welcomeSec.classList.remove('hidden');
+            document.getElementById('welcome-user-name').innerText = user.displayName;
+            if(user.photoURL) document.getElementById('user-avatar-preview').src = user.photoURL;
+        } else {
+            // Giriş yok, varsayılan ekran
+        }
+    });
+});
+
+// GOOGLE GİRİŞ BUTONU
+window.handleGoogleLogin = async function() {
+    const user = await Auth.loginWithGoogle();
+    if (user) {
+        state.myUsername = user.displayName;
+        window.startSession();
+    }
+};
+
+// MİSAFİR GİRİŞ BUTONU
+window.handleGuestLogin = function() {
     const input = document.getElementById('username-input');
     if (!input.value.trim()) { alert("Lütfen isim girin"); return; }
     state.myUsername = input.value.trim();
+    window.startSession();
+};
+
+// ÇIKIŞ YAP
+window.handleLogout = function() {
+    Auth.logoutUser();
+};
+
+// ORTAK BAŞLATMA (Ses/Görüntü İzni ve PeerJS)
+window.startSession = async function() {
     const success = await Audio.initAudioVideo();
     if(success) {
         UI.showAppScreen();
@@ -15,6 +57,7 @@ window.loginUser = async function() {
     }
 };
 
+// ARAMA YAP
 window.startCall = function() {
     const idInput = document.getElementById('remote-id');
     const remoteId = idInput.value.trim().toUpperCase().replace('#', '');
@@ -26,6 +69,7 @@ window.endCall = function() {
     UI.resetScreens();
 };
 
+// DİĞER KONTROLLER (Değişmedi)
 window.toggleMute = function() {
     if (!state.localStream) return;
     const track = state.localStream.getAudioTracks()[0];
@@ -57,15 +101,10 @@ window.toggleCamera = function() {
 window.toggleDeafen = function() {
     state.isDeafened = !state.isDeafened;
     document.querySelectorAll('video').forEach(v => {
-        if (!v.closest('#video-local') && !v.closest('#screen-local')) v.muted = state.isDeafened;
+        if (v.id !== 'video-local' && v.id !== 'screen-local') v.muted = state.isDeafened;
     });
     const btn = document.getElementById('deafen-btn');
-    const icon = document.getElementById('deafen-icon');
-    if (state.isDeafened) {
-        btn.classList.add('btn-off'); icon.classList.replace('fa-headphones', 'fa-ear-deaf');
-    } else {
-        btn.classList.remove('btn-off'); icon.classList.replace('fa-ear-deaf', 'fa-headphones');
-    }
+    if(state.isDeafened) btn.classList.add('btn-off'); else btn.classList.remove('btn-off');
 };
 
 window.toggleScreenShare = async function() {
@@ -94,23 +133,14 @@ window.toggleScreenShare = async function() {
     }
 };
 
-// AYARLAR İŞLEVLERİ (GERÇEK ZAMANLI)
 window.changeOutputVolume = (val) => Audio.setOutputVolume(val);
 window.changeMicGain = (val) => Audio.setMicGain(val);
-window.changeAudioInput = () => {
-    const id = document.getElementById('audio-input-select').value;
-    Audio.switchAudioInput(id);
-};
-window.changeVideoInput = () => {
-    const id = document.getElementById('video-input-select').value;
-    Audio.switchVideoInput(id);
-};
+window.changeAudioInput = () => { Audio.switchAudioInput(document.getElementById('audio-input-select').value); };
+window.changeVideoInput = () => { Audio.switchVideoInput(document.getElementById('video-input-select').value); };
 window.changeAudioOutput = async () => {
     const deviceId = document.getElementById('audio-output-select').value;
     const videos = document.querySelectorAll('video');
-    for(const v of videos) {
-        if('setSinkId' in v) await v.setSinkId(deviceId);
-    }
+    for(const v of videos) { if('setSinkId' in v) await v.setSinkId(deviceId); }
 };
 
 window.openTab = (name) => UI.openSettingsTab(name);

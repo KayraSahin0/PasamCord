@@ -13,17 +13,38 @@
     <div id="login-screen" class="login-overlay">
         <div class="login-card">
             <div class="login-header">
-                <i class="fa-brands fa-discord logo-icon"></i>
+                <i class="fa-solid fa-video logo-icon"></i>
                 <h2>PasamCord</h2>
             </div>
-            <p class="login-desc">Sohbete katılmak için bir kimlik belirleyin.</p>
-            <div class="input-wrapper">
-                <i class="fa-solid fa-user input-icon"></i>
-                <input type="text" id="username-input" placeholder="Kullanıcı Adı" autocomplete="off">
-            </div>
-            <button class="btn-primary" onclick="window.loginUser()">
-                Katıl
+            
+            <button class="btn-google" onclick="window.handleGoogleLogin()">
+                <i class="fa-brands fa-google"></i> Google ile Devam Et
             </button>
+
+            <div class="divider">
+                <span>veya</span>
+            </div>
+
+            <div id="guest-section">
+                <p class="login-desc">Misafir olarak katılın</p>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user input-icon"></i>
+                    <input type="text" id="username-input" placeholder="Adınız" autocomplete="off">
+                </div>
+                <button class="btn-primary" onclick="window.handleGuestLogin()">
+                    Misafir Olarak Gir
+                </button>
+            </div>
+
+            <div id="welcome-back-section" class="hidden">
+                <img id="user-avatar-preview" src="" alt="Avatar" class="avatar-preview">
+                <p class="welcome-user-text">Hoşgeldin, <span id="welcome-user-name"></span></p>
+                <button class="btn-primary" onclick="window.startSession()">
+                    Odaya Katıl
+                </button>
+                <button class="btn-text" onclick="window.handleLogout()">Çıkış Yap</button>
+            </div>
+
         </div>
     </div>
 
@@ -32,7 +53,11 @@
         <div class="connect-overlay" id="connect-panel">
             <div class="connect-box">
                 <h3>Toplantıya Hazır Mısın?</h3>
-                <p class="welcome-text"><span id="display-username"></span> olarak giriş yapıldı.</p>
+                <div class="user-status-bar">
+                    <p class="welcome-text"><span id="display-username"></span></p>
+                    <button onclick="window.handleLogout()" class="btn-logout-mini" title="Çıkış Yap"><i class="fa-solid fa-right-from-bracket"></i></button>
+                </div>
+
                 <div class="room-input-group">
                     <div class="id-display" onclick="window.copyId()" title="Kopyalamak için tıkla">
                         <span id="my-id">ID Yükleniyor...</span>
@@ -104,6 +129,7 @@
                 <button class="nav-btn active" onclick="window.openTab('devices')">Ses ve Görüntü</button>
                 <button class="nav-btn" onclick="window.openTab('audio')">Ses Düzeyleri</button>
                 <button class="nav-btn" onclick="window.openTab('video')">Görünüm</button>
+                <button class="nav-btn btn-logout-settings" onclick="window.handleLogout()">Çıkış Yap</button>
             </div>
             <div class="settings-content">
                 <button class="close-modal-x" onclick="window.toggleSettings()">&times;</button>
