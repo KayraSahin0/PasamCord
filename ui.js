@@ -13,7 +13,6 @@ const adOverlay = document.getElementById('ad-wait-overlay');
 let isFocusMode = false;
 let isRemoteUpdate = false;
 
-// --- EKRAN YÖNETİMİ ---
 export function showAppScreen() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');
@@ -33,7 +32,6 @@ export function updateRoomId(id) {
 
 export function resetScreens() { window.location.reload(); }
 
-// --- AYARLAR SEKME ---
 export function openSettingsTab(tabName) {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -48,13 +46,12 @@ export function openSettingsTab(tabName) {
     if(target) target.classList.add('active');
 }
 
-// --- CHAT PANELİ ---
+// --- CHAT ---
 export function toggleChatPanel() {
+    if (youtubePanel.classList.contains('open')) youtubePanel.classList.remove('open');
     chatPanel.classList.toggle('open');
-    if (chatPanel.classList.contains('open')) {
-        chatBadge.classList.add('hidden');
-    }
-    updateLayout(); // Panellerin konumunu güncelle
+    if (chatPanel.classList.contains('open') && chatBadge) chatBadge.classList.add('hidden');
+    updateLayout();
 }
 
 export function addMessageToUI(sender, text, isMe) {
@@ -69,89 +66,100 @@ export function addMessageToUI(sender, text, isMe) {
 
 function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
-// --- YOUTUBE PANELİ ---
+// --- YOUTUBE & ARAMA ---
 export function toggleYouTubePanel() {
+    if (chatPanel.classList.contains('open')) chatPanel.classList.remove('open');
     const pPanel = document.getElementById('participants-panel');
     if(pPanel.classList.contains('open')) pPanel.classList.remove('open');
     
     youtubePanel.classList.toggle('open');
-    updateLayout(); // Konum güncelle
-
+    updateLayout();
     if (!state.youtubePlayer && window.YT) initYouTubePlayer();
 }
 
-// Panel Konumlarını Ayarla (Yan Yana)
 function updateLayout() {
     const isChatOpen = chatPanel.classList.contains('open');
     const isYTOpen = youtubePanel.classList.contains('open');
-
-    if (isChatOpen && isYTOpen) {
-        youtubePanel.classList.add('shifted'); // Sola kaydır
-    } else {
-        youtubePanel.classList.remove('shifted');
-    }
+    if (isChatOpen && isYTOpen) youtubePanel.classList.add('shifted'); else youtubePanel.classList.remove('shifted');
 }
 
 function initYouTubePlayer() {
     state.youtubePlayer = new YT.Player('player', {
         height: '100%', width: '100%', videoId: '',
-        playerVars: { 'autoplay': 1, 'controls': 1 },
-        events: { 'onStateChange': onPlayerStateChange }
+        playerVars: { 'autoplay': 1, 'controls': 1, 'origin': window.location.origin },
+        events: { 'onStateChange': onPlayerStateChange, 'onError': onPlayerError }
     });
-    // Reklam kontrolünü başlat
     setInterval(checkYouTubeAds, 1000);
 }
 
-// --- YOUTUBE REKLAM KONTROLÜ (GÜNCEL) ---
-function checkYouTubeAds() {
-    if (!state.youtubePlayer || !state.youtubePlayer.getDuration) return;
-
-    const duration = state.youtubePlayer.getDuration();
-    // Eğer video süresi aniden çok kısa olursa (örn 15sn) ve ana video değilse, bu reklamdır.
-    // Ancak en güvenilir yöntem: Eğer biz oynatıyorsak ve PlayerState PLAYING ise ama current time ilerlemiyorsa veya Duration değiştiyse.
-    // Basit çözüm: Eğer biri "Ad" sinyali yollarsa overlay göster.
-}
-
-export function showAdOverlay(username) {
-    document.getElementById('ad-user-name').innerText = username;
-    adOverlay.classList.remove('hidden');
-}
-
-export function hideAdOverlay() {
-    adOverlay.classList.add('hidden');
-}
+function checkYouTubeAds() { if (!state.youtubePlayer || !state.youtubePlayer.getDuration) return; }
+export function showAdOverlay(username) { document.getElementById('ad-user-name').innerText = username; if(adOverlay) adOverlay.classList.remove('hidden'); }
+export function hideAdOverlay() { if(adOverlay) adOverlay.classList.add('hidden'); }
 
 function onPlayerStateChange(event) {
     if (isRemoteUpdate) return;
     const time = state.youtubePlayer.getCurrentTime();
-    
-    // REKLAM ALGILAMA (Basit)
-    // Eğer state UNSTARTED (-1) ise ve biz video başlatmışsak, araya reklam girmiş olabilir.
-    // Veya video süresi aniden değişirse.
-    // Şimdilik sadece Play/Pause senkronizasyonu:
-    
     if (event.data == YT.PlayerState.PLAYING) Network.sendYouTubeAction('play', time);
     else if (event.data == YT.PlayerState.PAUSED) Network.sendYouTubeAction('pause', time);
 }
 
-export function loadYouTubeVideo(url, isLocal = true) {
+function onPlayerError(event) {
+    console.warn("YouTube Hata:", event.data);
+    const statusText = document.getElementById('yt-status-text');
+    if(statusText) {
+        if(event.data === 150 || event.data === 101) statusText.innerText = "Video web'de oynatılamıyor (Telif).";
+        else statusText.innerText = "Video yüklenemedi.";
+    }
+}
+
+// API ile Arama ve Yükleme
+export async function searchAndLoadYouTube(query, isLocal = true) {
+    const statusText = document.getElementById('yt-status-text');
+    if(statusText) { statusText.innerText = "Aranıyor..."; statusText.style.color = "#aaa"; }
+
     let videoId = "";
-    if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
-    else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1];
-    
-    if (!videoId) return;
+    if (query.includes('youtube.com') || query.includes('youtu.be')) {
+        if (query.includes('v=')) videoId = query.split('v=')[1].split('&')[0];
+        else if (query.includes('youtu.be/')) videoId = query.split('youtu.be/')[1];
+    } else {
+        try {
+            // Piped API (Ücretsiz Youtube Arama)
+            const response = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=videos`);
+            const data = await response.json();
+            if (data.items && data.items.length > 0) {
+                videoId = data.items[0].url.split('v=')[1];
+            } else {
+                if(statusText) statusText.innerText = "Bulunamadı. Link deneyin.";
+                return;
+            }
+        } catch (e) {
+            console.error(e);
+            if(statusText) statusText.innerText = "Arama hatası.";
+            return;
+        }
+    }
+
+    if (!videoId) { if(statusText) statusText.innerText = "Geçersiz!"; return; }
+    loadYouTubeVideoById(videoId, isLocal);
+}
+
+export function loadYouTubeVideoById(videoId, isLocal) {
     if (!youtubePanel.classList.contains('open')) toggleYouTubePanel();
+    const statusText = document.getElementById('yt-status-text');
+    if(statusText) statusText.innerText = "Video yüklendi.";
 
     if (!state.youtubePlayer) {
-        if(!window.YT) { setTimeout(() => loadYouTubeVideo(url, isLocal), 1000); return; }
+        if(!window.YT) { setTimeout(() => loadYouTubeVideoById(videoId, isLocal), 1000); return; }
         state.youtubePlayer = new YT.Player('player', {
             height: '100%', width: '100%', videoId: videoId,
-            playerVars: { 'autoplay': 1 }, events: { 'onStateChange': onPlayerStateChange }
+            playerVars: { 'autoplay': 1, 'origin': window.location.origin },
+            events: { 'onStateChange': onPlayerStateChange, 'onError': onPlayerError }
         });
     } else {
         state.youtubePlayer.loadVideoById(videoId);
     }
-    if (isLocal) Network.sendYouTubeLoad(url);
+
+    if (isLocal) Network.sendYouTubeLoad(videoId);
 }
 
 export function syncYouTubeAction(action, time) {
@@ -163,11 +171,10 @@ export function syncYouTubeAction(action, time) {
     else if (action === 'pause') state.youtubePlayer.pauseVideo();
     else if (action === 'ad-start') showAdOverlay("Birisi");
     else if (action === 'ad-end') hideAdOverlay();
-    
     setTimeout(() => { isRemoteUpdate = false; }, 500);
 }
 
-// --- VİDEO KARTI YÖNETİMİ ---
+// --- VİDEO KARTLARI ---
 export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
     let cardId = isLocal ? (isScreen ? 'screen-local' : 'video-local') : (isScreen ? `screen-${peerId}` : `video-${peerId}`);
     if (document.getElementById(cardId)) return;
@@ -208,7 +215,7 @@ export function removeVideoCard(peerId, isScreen = false) {
     if (card) { if (card.classList.contains('featured')) exitFocusMode(); card.remove(); }
 }
 
-// --- FİLM ŞERİDİ (FOCUS MODE) ---
+// --- FILMSTRIP ---
 function toggleFocusMode(selectedCard) {
     if (!isFocusMode) {
         isFocusMode = true; videoGrid.classList.add('focus-mode'); selectedCard.classList.add('featured');

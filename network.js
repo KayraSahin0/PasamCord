@@ -1,16 +1,45 @@
 import { state } from './state.js';
-import { updateMyId, updateRoomId, addVideoCard, removeVideoCard, updateParticipantsUI, updateNameTag, showCallScreen, addMessageToUI, loadYouTubeVideo, syncYouTubeAction } from './ui.js';
+import { updateMyId, updateRoomId, addVideoCard, removeVideoCard, updateParticipantsUI, updateNameTag, showCallScreen, addMessageToUI, loadYouTubeVideoById, syncYouTubeAction } from './ui.js';
 
-export function initPeer() {
-    const myId = Math.random().toString(36).substr(2, 5).toUpperCase();
+let connectionTimeout = null;
+
+export function initPeer(customId = null) {
+    const myId = customId || Math.random().toString(36).substr(2, 5).toUpperCase();
+    
+    if (state.peer) {
+        state.peer.destroy();
+        state.peer = null;
+    }
+
     state.peer = new Peer(myId);
 
+    if (connectionTimeout) clearTimeout(connectionTimeout);
+    connectionTimeout = setTimeout(() => {
+        if (state.peer && !state.peer.id) {
+            state.peer.destroy();
+            initPeer(null);
+        }
+    }, 5000);
+
     state.peer.on('open', (id) => {
+        if (connectionTimeout) clearTimeout(connectionTimeout);
         updateMyId(id);
-        updateRoomId(id);
-        state.participantList = [{ id: id, name: state.myUsername, isMe: true }];
-        updateParticipantsUI();
-        startHeartbeat();
+        
+        if (customId) {
+            updateRoomId(id);
+            state.participantList = [{ id: id, name: state.myUsername, isMe: true }];
+            updateParticipantsUI();
+            startHeartbeat();
+            showCallScreen();
+        }
+    });
+
+    state.peer.on('error', (err) => {
+        if (connectionTimeout) clearTimeout(connectionTimeout);
+        if (err.type === 'unavailable-id') {
+            alert("Bu Oda ID'si dolu!");
+            initPeer(null);
+        }
     });
 
     state.peer.on('call', (call) => {
@@ -22,20 +51,42 @@ export function initPeer() {
     state.peer.on('connection', (conn) => setupDataConnection(conn));
 }
 
-// --- VERİ GÖNDERME YARDIMCISI ---
-export function broadcastData(data) {
-    Object.values(state.peers).forEach(p => {
-        if (p.conn && p.conn.open) p.conn.send(data);
+// --- AKILLI ODA ---
+export function joinOrCreateRoom(roomId) {
+    if (!roomId) { alert("Lütfen bir Oda Adı girin!"); return; }
+    updateMyId("Bağlanılıyor...");
+
+    const conn = state.peer.connect(roomId);
+    let connected = false;
+
+    conn.on('open', () => {
+        connected = true;
+        connectToPeer(roomId);
     });
+
+    setTimeout(() => {
+        if (!connected) {
+            initPeer(roomId); // Host Ol
+        }
+    }, 2000);
 }
 
+export function connectToPeer(remoteId) {
+    updateRoomId(remoteId);
+    const call = state.peer.call(remoteId, state.localStream, { metadata: { type: 'camera' } });
+    const conn = state.peer.connect(remoteId);
+    setupDataConnection(conn);
+    handleCall(call, conn);
+}
+
+// --- DATA GÖNDERİM ---
 export function sendChatMessage(text) {
     const data = { type: 'chat', sender: state.myUsername, text: text };
     broadcastData(data);
 }
 
-export function sendYouTubeLoad(url) {
-    const data = { type: 'yt-load', url: url };
+export function sendYouTubeLoad(videoId) {
+    const data = { type: 'yt-load', videoId: videoId };
     broadcastData(data);
 }
 
@@ -44,10 +95,11 @@ export function sendYouTubeAction(action, time) {
     broadcastData(data);
 }
 
-// ... (startHeartbeat, connectToPeer, handleCall vb. AYNI) ...
-// (Lütfen önceki network.js dosyasından buraya kadar olan standart bağlantı fonksiyonlarını kopyalayın)
-// EKSİKSİZ OLMASI İÇİN TEKRAR YAZIYORUM:
+function broadcastData(data) {
+    Object.values(state.peers).forEach(p => { if (p.conn && p.conn.open) p.conn.send(data); });
+}
 
+// --- HEARTBEAT (KOPMA YÖNETİMİ) ---
 function startHeartbeat() {
     setInterval(() => {
         Object.values(state.peers).forEach(p => {
@@ -63,16 +115,7 @@ function startHeartbeat() {
     }, 5000);
 }
 
-export function connectToPeer(remoteId) {
-    if (!remoteId) { alert("ID Giriniz!"); return; }
-    if (state.peers[remoteId]) return;
-    updateRoomId(remoteId);
-    const call = state.peer.call(remoteId, state.localStream, { metadata: { type: 'camera' } });
-    const conn = state.peer.connect(remoteId);
-    setupDataConnection(conn);
-    handleCall(call, conn);
-}
-
+// --- YARDIMCILAR ---
 export function shareScreenToAll() {
     if (!state.localScreenStream) return;
     Object.keys(state.peers).forEach(peerId => shareScreenToPeer(peerId));
@@ -142,18 +185,11 @@ function setupDataConnection(conn) {
     conn.on('data', (data) => {
         if (data.type === 'heartbeat') { state.lastHeartbeat[conn.peer] = Date.now(); return; }
         
-        // CHAT
         if (data.type === 'chat') addMessageToUI(data.sender, data.text, false);
+        
+        if (data.type === 'yt-load') loadYouTubeVideoById(data.videoId, false);
+        if (data.type === 'yt-action') syncYouTubeAction(data.action, data.time);
 
-        // YOUTUBE SYNC
-        if (data.type === 'yt-load') {
-            loadYouTubeVideo(data.url, false); // false = remote trigger
-        }
-        if (data.type === 'yt-action') {
-            syncYouTubeAction(data.action, data.time);
-        }
-
-        // STANDART İŞLEMLER
         if (data.type === 'name') {
             if (state.peers[conn.peer]) {
                 state.peers[conn.peer].name = data.name;

@@ -18,10 +18,13 @@
                 <img src="./logoPic/logo.png" alt="PasamCord" class="app-logo">
                 <h2>PasamCord</h2>
             </div>
+            
             <button class="btn-google" onclick="window.handleGoogleLogin()">
                 <i class="fa-brands fa-google"></i> Google ile Devam Et
             </button>
+
             <div class="divider"><span>veya</span></div>
+
             <div id="guest-section">
                 <p class="login-desc">Misafir olarak katılın</p>
                 <div class="input-wrapper">
@@ -32,10 +35,13 @@
                     Misafir Olarak Gir
                 </button>
             </div>
+
             <div id="welcome-back-section" class="hidden">
                 <img id="user-avatar-preview" src="" alt="Avatar" class="avatar-preview">
                 <p class="welcome-user-text">Hoşgeldin, <span id="welcome-user-name"></span></p>
-                <button class="btn-primary" onclick="window.startSession()">Odaya Katıl</button>
+                <button class="btn-primary" onclick="window.startSession()">
+                    Odaya Katıl
+                </button>
                 <button class="btn-text" onclick="window.handleLogout()">Çıkış Yap</button>
             </div>
         </div>
@@ -55,8 +61,8 @@
                         <span id="my-id">ID Yükleniyor...</span>
                         <i class="fa-regular fa-copy"></i>
                     </div>
-                    <input type="text" id="remote-id" placeholder="Toplantı kodu veya ID">
-                    <button class="btn-join" onclick="window.startCall()">Şimdi Katıl</button>
+                    <input type="text" id="remote-id" placeholder="Oda Adı veya ID">
+                    <button class="btn-join" onclick="window.startCall()">Odaya Gir / Kur</button>
                 </div>
                 <div id="copy-feedback" class="fade-out">Kopyalandı!</div>
             </div>
@@ -69,7 +75,7 @@
                 <div class="ad-content">
                     <div class="loader"></div>
                     <h3>Reklam Arası</h3>
-                    <p><span id="ad-user-name">Kullanıcı</span> reklam izliyor, bekleniyor...</p>
+                    <p><span id="ad-user-name">Kullanıcı</span> reklam izliyor, senkronizasyon bekleniyor...</p>
                 </div>
             </div>
         </div>
@@ -81,34 +87,67 @@
                 <span id="footer-room-id" class="room-id-tag">#ODAMIZ</span>
             </div>
             <div class="footer-center">
-                <button class="ctrl-btn" id="mute-btn" onclick="window.toggleMute()" title="Mikrofon"><i class="fa-solid fa-microphone" id="mute-icon"></i></button>
-                <button class="ctrl-btn btn-off" id="camera-btn" onclick="window.toggleCamera()" title="Kamera"><i class="fa-solid fa-video-slash" id="camera-icon"></i></button>
-                <button class="ctrl-btn" id="screen-btn" onclick="window.toggleScreenShare()" title="Ekran Paylaş"><i class="fa-solid fa-desktop" id="screen-icon"></i></button>
-                <button class="ctrl-btn btn-spotify" onclick="window.startSpotifyShare()" title="Spotify"><i class="fa-brands fa-spotify"></i></button>
-                <button class="ctrl-btn btn-youtube" onclick="window.toggleYouTube()" title="YouTube"><i class="fa-brands fa-youtube"></i></button>
-                <button class="ctrl-btn" id="deafen-btn" onclick="window.toggleDeafen()" title="Sesi Kapat"><i class="fa-solid fa-headphones" id="deafen-icon"></i></button>
-                <button class="ctrl-btn" onclick="window.toggleSettings()" title="Ayarlar"><i class="fa-solid fa-gear"></i></button>
-                <button class="ctrl-btn btn-hangup" onclick="window.endCall()" title="Ayrıl"><i class="fa-solid fa-phone-slash"></i></button>
+                <button class="ctrl-btn" id="mute-btn" onclick="window.toggleMute()" title="Mikrofon">
+                    <i class="fa-solid fa-microphone" id="mute-icon"></i>
+                </button>
+                <button class="ctrl-btn btn-off" id="camera-btn" onclick="window.toggleCamera()" title="Kamera">
+                    <i class="fa-solid fa-video-slash" id="camera-icon"></i>
+                </button>
+                <button class="ctrl-btn" id="screen-btn" onclick="window.toggleScreenShare()" title="Ekran Paylaş">
+                    <i class="fa-solid fa-desktop" id="screen-icon"></i>
+                </button>
+                
+                <button class="ctrl-btn btn-spotify" onclick="window.startSpotifyShare()" title="Spotify">
+                    <i class="fa-brands fa-spotify"></i>
+                </button>
+
+                <button class="ctrl-btn btn-youtube" onclick="window.toggleYouTube()" title="YouTube">
+                    <i class="fa-brands fa-youtube"></i>
+                </button>
+
+                <button class="ctrl-btn" id="deafen-btn" onclick="window.toggleDeafen()" title="Sesi Kapat">
+                    <i class="fa-solid fa-headphones" id="deafen-icon"></i>
+                </button>
+                <button class="ctrl-btn" onclick="window.toggleSettings()" title="Ayarlar">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <button class="ctrl-btn btn-hangup" onclick="window.endCall()" title="Ayrıl">
+                    <i class="fa-solid fa-phone-slash"></i>
+                </button>
             </div>
             <div class="footer-right">
-                <button class="icon-btn" onclick="window.toggleParticipants()" title="Katılımcılar"><i class="fa-solid fa-users"></i><span id="participant-badge" class="badge">1</span></button>
-                <button class="icon-btn" onclick="window.toggleChat()" title="Sohbet"><i class="fa-solid fa-message"></i><span id="chat-badge" class="badge hidden"></span></button>
+                <button class="icon-btn" onclick="window.toggleParticipants()" title="Katılımcılar">
+                    <i class="fa-solid fa-users"></i>
+                    <span id="participant-badge" class="badge">1</span>
+                </button>
+                <button class="icon-btn" onclick="window.toggleChat()" title="Sohbet">
+                    <i class="fa-solid fa-message"></i>
+                    <span id="chat-badge" class="badge hidden"></span>
+                </button>
             </div>
         </div>
     </div>
 
     <div class="side-panel" id="participants-panel">
-        <div class="panel-header"><h3>Katılımcılar</h3><button class="close-btn" onclick="window.toggleParticipants()">&times;</button></div>
-        <div class="panel-content"><ul class="user-list" id="participant-list"></ul></div>
+        <div class="panel-header">
+            <h3>Katılımcılar</h3>
+            <button class="close-btn" onclick="window.toggleParticipants()">&times;</button>
+        </div>
+        <div class="panel-content">
+            <ul class="user-list" id="participant-list"></ul>
+        </div>
     </div>
 
     <div class="side-panel" id="chat-panel">
-        <div class="panel-header"><h3>Oda Sohbeti</h3><button class="close-btn" onclick="window.toggleChat()">&times;</button></div>
+        <div class="panel-header">
+            <h3>Oda Sohbeti</h3>
+            <button class="close-btn" onclick="window.toggleChat()">&times;</button>
+        </div>
         <div class="chat-content" id="chat-content">
-            <div class="chat-welcome"><p>Buraya gönderilen mesajlar oda kapandığında silinir.</p></div>
+            <div class="chat-welcome"><p>Mesajlar oda kapandığında silinir.</p></div>
         </div>
         <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Bir mesaj yaz..." autocomplete="off">
+            <input type="text" id="chat-input" placeholder="Mesaj yaz..." autocomplete="off">
             <button id="send-btn" onclick="window.sendChat()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
@@ -120,11 +159,11 @@
         </div>
         <div class="youtube-content">
             <div class="yt-input-group">
-                <input type="text" id="yt-url-input" placeholder="YouTube Video Linki">
-                <button onclick="window.loadYouTubeVideo()">Aç</button>
+                <input type="text" id="yt-url-input" placeholder="Link yapıştır veya şarkı adı yaz...">
+                <button onclick="window.handleYouTubeSearch()">Bul</button>
             </div>
             <div id="youtube-player-container"><div id="player"></div></div>
-            <p class="yt-hint">Reklam girerse video herkes için duraklatılır.</p>
+            <p id="yt-status-text" class="yt-hint">Video herkes için senkronize çalışır.</p>
         </div>
     </div>
 
@@ -159,22 +198,26 @@
             </div>
             <div class="settings-content">
                 <button class="close-modal-x" onclick="window.toggleSettings()">&times;</button>
+                
                 <div id="tab-devices" class="tab-pane active">
                     <h3 class="tab-title">Cihaz Ayarları</h3>
                     <div class="form-group"><label>Mikrofon</label><div class="custom-select"><select id="audio-input-select" onchange="window.changeAudioInput()"></select><i class="fa-solid fa-chevron-down"></i></div></div>
                     <div class="form-group"><label>Kamera</label><div class="custom-select"><select id="video-input-select" onchange="window.changeVideoInput()"></select><i class="fa-solid fa-chevron-down"></i></div></div>
                     <div class="form-group"><label>Çıkış Cihazı (Hoparlör)</label><div class="custom-select"><select id="audio-output-select" onchange="window.changeAudioOutput()"></select><i class="fa-solid fa-chevron-down"></i></div></div>
                 </div>
+
                 <div id="tab-quality" class="tab-pane">
                     <h3 class="tab-title">Görüntü Kalitesi</h3>
-                    <div class="form-group"><label>Çözünürlük</label><div class="custom-select"><select id="video-resolution" onchange="window.changeVideoQuality()"><option value="320">Düşük</option><option value="640">Standart</option><option value="1280" selected>HD Ready</option><option value="1920">Full HD</option></select><i class="fa-solid fa-chevron-down"></i></div></div>
+                    <div class="form-group"><label>Çözünürlük</label><div class="custom-select"><select id="video-resolution" onchange="window.changeVideoQuality()"><option value="320">Düşük (320x240)</option><option value="640">Standart (640x480)</option><option value="1280" selected>HD Ready (1280x720)</option><option value="1920">Full HD (1920x1080)</option></select><i class="fa-solid fa-chevron-down"></i></div></div>
                     <div class="form-group"><label>Kare Hızı (FPS)</label><div class="custom-select"><select id="video-fps" onchange="window.changeVideoQuality()"><option value="24">24 FPS</option><option value="30" selected>30 FPS</option><option value="60">60 FPS</option></select><i class="fa-solid fa-chevron-down"></i></div></div>
                 </div>
+
                 <div id="tab-audio" class="tab-pane">
                     <h3 class="tab-title">Ses Kontrolleri</h3>
                     <div class="form-group"><label>Gelen Ses</label><input type="range" class="styled-slider" min="0" max="1" step="0.1" value="1" oninput="window.changeOutputVolume(this.value)"></div>
                     <div class="form-group"><label>Mikrofon Hassasiyeti</label><input type="range" class="styled-slider" min="-1" max="1" step="0.1" value="0" oninput="window.changeMicGain(this.value)"></div>
                 </div>
+
                 <div id="tab-video" class="tab-pane">
                     <h3 class="tab-title">Görünüm Ayarları</h3>
                     <div class="form-group row-group">
@@ -182,7 +225,10 @@
                         <label class="toggle-switch"><input type="checkbox" id="mirror-check" checked onchange="window.toggleMirrorSetting(this.checked)"><span class="slider"></span></label>
                     </div>
                 </div>
-                <div class="settings-footer"><button class="btn-save" onclick="window.toggleSettings()">Kaydet ve Kapat</button></div>
+
+                <div class="settings-footer">
+                    <button class="btn-save" onclick="window.toggleSettings()">Kaydet ve Kapat</button>
+                </div>
             </div>
         </div>
     </div>
