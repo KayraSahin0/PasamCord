@@ -22,7 +22,9 @@ export const state = {
     videoResolution: 1280,
     videoFPS: 30,
 
-    // YouTube State
     youtubePlayer: null,
-    isYoutubeOpen: false
+    isYoutubeOpen: false,
+
+    // YENİ: Bağlantı başlangıç zamanı
+    connectionStartTime: null
 };

@@ -66,7 +66,7 @@ window.startSession = async function() {
     const success = await Audio.initAudioVideo();
     if(success) {
         UI.showAppScreen();
-        Network.initPeer(); // Başlangıç (Rastgele ID)
+        Network.initPeer();
         startTimer();
     }
 };
@@ -75,7 +75,6 @@ window.startSession = async function() {
 window.startCall = function() {
     const idInput = document.getElementById('remote-id');
     const roomId = idInput.value.trim().toUpperCase().replace('#', '');
-    // Akıllı Oda: Varsa gir, yoksa kur
     Network.joinOrCreateRoom(roomId);
 };
 
@@ -101,19 +100,31 @@ window.toggleMute = function() {
     }
 };
 
+// --- KAMERA TOGGLE (DÜZELTİLDİ) ---
 window.toggleCamera = function() {
     if (!state.localStream) return;
-    const track = state.localStream.getVideoTracks()[0];
-    track.enabled = !track.enabled;
-    state.isCameraOff = !track.enabled;
-    const btn = document.getElementById('camera-btn');
-    const icon = document.getElementById('camera-icon');
-    if (state.isCameraOff) {
-        btn.classList.add('btn-off');
-        icon.classList.replace('fa-video', 'fa-video-slash');
-    } else {
-        btn.classList.remove('btn-off');
-        icon.classList.replace('fa-video-slash', 'fa-video');
+
+    // Hedef durum: Şu an kapalıysa aç (true), açıksa kapat (false)
+    const targetState = state.isCameraOff; 
+
+    // Audio.js'deki fonksiyonu çağır (Artık async değil, anlık)
+    const success = Audio.toggleLocalVideo(targetState);
+
+    if (success) {
+        state.isCameraOff = !targetState; // Durumu güncelle
+
+        const btn = document.getElementById('camera-btn');
+        const icon = document.getElementById('camera-icon');
+
+        if (state.isCameraOff) {
+            // KAPANDI
+            btn.classList.add('btn-off');
+            icon.classList.replace('fa-video', 'fa-video-slash');
+        } else {
+            // AÇILDI
+            btn.classList.remove('btn-off');
+            icon.classList.replace('fa-video-slash', 'fa-video');
+        }
     }
 };
 
@@ -149,9 +160,7 @@ window.toggleScreenShare = async function() {
             UI.addVideoCard('local', stream, state.myUsername, true, true);
             Network.shareScreenToAll();
             btn.classList.add('btn-success');
-            stream.getVideoTracks()[0].onended = () => { 
-                if(state.isScreenSharing) window.toggleScreenShare(); 
-            };
+            stream.getVideoTracks()[0].onended = () => { if(state.isScreenSharing) window.toggleScreenShare(); };
         } catch (err) { console.error(err); }
     } else {
         if (state.localScreenStream) {
@@ -166,7 +175,6 @@ window.toggleScreenShare = async function() {
 
 // --- 6. CHAT ---
 window.toggleChat = function() { UI.toggleChatPanel(); };
-
 window.sendChat = function() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
@@ -185,14 +193,12 @@ window.confirmSpotifyShare = async function() {
 };
 
 window.toggleYouTube = function() { UI.toggleYouTubePanel(); };
-
 window.handleYouTubeSearch = function() {
     const inputVal = document.getElementById('yt-url-input').value.trim();
     if (!inputVal) return;
     UI.searchAndLoadYouTube(inputVal, true);
     document.getElementById('yt-url-input').value = "";
 };
-// "Aç" butonu için de:
 window.loadYouTubeVideo = window.handleYouTubeSearch;
 
 // --- 8. AYARLAR ---
@@ -216,7 +222,6 @@ window.changeVideoQuality = function() {
 window.openTab = (name) => UI.openSettingsTab(name);
 window.toggleMirrorSetting = (checked) => UI.setLocalMirror(checked);
 window.toggleSettings = () => document.getElementById('settings-modal').classList.toggle('hidden');
-
 window.toggleParticipants = () => {
     const chat = document.getElementById('chat-panel');
     if(chat.classList.contains('open')) chat.classList.remove('open');
@@ -243,5 +248,6 @@ function startTimer() {
         const s = (sec%60).toString().padStart(2,'0');
         const el = document.getElementById('call-timer');
         if(el) el.innerText = `${m}:${s}`;
+        UI.updateRoomSettingsUI();
     }, 1000);
 }

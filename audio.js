@@ -10,8 +10,8 @@ export async function initAudioVideo() {
                 autoGainControl: true
             },
             video: {
-                width: { ideal: state.videoResolution }, 
-                height: { ideal: state.videoResolution * (9/16) }, 
+                width: { ideal: state.videoResolution },
+                height: { ideal: state.videoResolution * (9/16) },
                 frameRate: { ideal: state.videoFPS }
             }
         };
@@ -32,8 +32,11 @@ export async function initAudioVideo() {
             state.audioDestination.stream.getAudioTracks()[0]
         ]);
 
+        // KAMERA BAŞLANGIÇTA SADECE DEVRE DIŞI (STOP YOK)
         const videoTrack = state.localStream.getVideoTracks()[0];
-        videoTrack.enabled = false;
+        if (videoTrack) {
+            videoTrack.enabled = false; // Sadece görüntüyü kes
+        }
         state.isCameraOff = true;
 
         addVideoCard('local', state.localStream, state.myUsername, true);
@@ -48,23 +51,24 @@ export async function initAudioVideo() {
     }
 }
 
-// --- KALİTE DEĞİŞTİRME ---
-export async function applyVideoQuality() {
-    if (!state.localStream) return;
+// --- KAMERA AÇ/KAPA (GARANTİ ÇALIŞAN YÖNTEM) ---
+export function toggleLocalVideo(shouldEnable) {
+    if (!state.localStream) return false;
     
     const track = state.localStream.getVideoTracks()[0];
     if (track) {
-        try {
-            await track.applyConstraints({
-                width: { ideal: state.videoResolution },
-                height: { ideal: state.videoResolution * (9/16) },
-                frameRate: { ideal: state.videoFPS }
-            });
-            console.log(`Kalite Güncellendi: ${state.videoResolution}p ${state.videoFPS}fps`);
-        } catch (e) {
-            console.error("Kalite değiştirilemedi:", e);
+        // Track'i durdurmuyoruz, sadece aktif/pasif yapıyoruz
+        track.enabled = shouldEnable;
+        
+        // UI Güncelleme (Avatarı göster/gizle)
+        const localCard = document.getElementById('video-local');
+        if (localCard) {
+            if (shouldEnable) localCard.classList.add('video-active');
+            else localCard.classList.remove('video-active');
         }
+        return true;
     }
+    return false;
 }
 
 export async function populateDeviceLists() {
@@ -84,7 +88,7 @@ export async function populateDeviceLists() {
         else if (d.kind === 'audiooutput') aOutput.appendChild(opt);
     });
     if(aOutput.options.length === 0) {
-        const opt = document.createElement('option'); opt.innerText = "Desteklenmiyor"; aOutput.appendChild(opt);
+        const opt = document.createElement('option'); opt.innerText = "Varsayılan / Desteklenmiyor"; aOutput.appendChild(opt);
     }
 }
 
@@ -92,22 +96,27 @@ export async function switchAudioInput(deviceId) {
     try {
         const newStream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: deviceId } } });
         const newAudioTrack = newStream.getAudioTracks()[0];
-        const oldTrack = state.localStream.getAudioTracks()[0];
-        if(oldTrack) oldTrack.stop();
-
+        
         state.micSource.disconnect();
         state.micSource = state.audioContext.createMediaStreamSource(newStream);
         state.micSource.connect(state.gainNode);
         
         const processedTrack = state.audioDestination.stream.getAudioTracks()[0];
-        state.localStream.removeTrack(state.localStream.getAudioTracks()[0]);
+        const oldTrack = state.localStream.getAudioTracks()[0];
+        if(oldTrack) state.localStream.removeTrack(oldTrack);
         state.localStream.addTrack(processedTrack);
 
-        updatePeersTrack(processedTrack, 'audio');
+        Object.values(state.peers).forEach(p => {
+            if(p.call && p.call.peerConnection) {
+                const sender = p.call.peerConnection.getSenders().find(s => s.track.kind === 'audio');
+                if(sender) sender.replaceTrack(processedTrack);
+            }
+        });
     } catch(e) { console.error(e); }
 }
 
 export async function switchVideoInput(deviceId) {
+    if (state.isCameraOff) return;
     try {
         const constraints = {
             video: { 
@@ -119,26 +128,21 @@ export async function switchVideoInput(deviceId) {
         const newStream = await navigator.mediaDevices.getUserMedia(constraints);
         const newVideoTrack = newStream.getVideoTracks()[0];
         const oldTrack = state.localStream.getVideoTracks()[0];
-        if(oldTrack) oldTrack.stop();
-
+        
         state.localStream.removeTrack(oldTrack);
+        oldTrack.stop(); // Eskisini durdur
         state.localStream.addTrack(newVideoTrack);
-        newVideoTrack.enabled = !state.isCameraOff;
 
         const localVideo = document.querySelector('#video-local video');
         if(localVideo) localVideo.srcObject = state.localStream;
 
-        updatePeersTrack(newVideoTrack, 'video');
+        Object.values(state.peers).forEach(p => {
+            if(p.call && p.call.peerConnection) {
+                const sender = p.call.peerConnection.getSenders().find(s => s.track.kind === 'video');
+                if(sender) sender.replaceTrack(newVideoTrack);
+            }
+        });
     } catch(e) { console.error(e); }
-}
-
-function updatePeersTrack(newTrack, kind) {
-    Object.values(state.peers).forEach(peer => {
-        if(peer.call && peer.call.peerConnection) {
-            const sender = peer.call.peerConnection.getSenders().find(s => s.track && s.track.kind === kind);
-            if(sender) sender.replaceTrack(newTrack);
-        }
-    });
 }
 
 export function setMicGain(val) {
@@ -153,4 +157,8 @@ export function setOutputVolume(val) {
     videos.forEach(v => {
         if (!v.muted && v.id !== 'video-local') v.volume = val;
     });
+}
+
+export async function applyVideoQuality() {
+    console.log("Kalite ayarı değişti. Etkili olması için kamerayı kapatıp açın.");
 }

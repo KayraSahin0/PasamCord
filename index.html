@@ -198,6 +198,21 @@
             </div>
             <div class="settings-content">
                 <button class="close-modal-x" onclick="window.toggleSettings()">&times;</button>
+
+                <div id="tab-room" class="tab-pane active">
+                    <h3 class="tab-title">Oda Bilgileri</h3>
+                    <div class="info-card">
+                        <div class="info-label">Oda Kimliği (ID)</div>
+                        <div class="info-value copy-able" onclick="window.copyId()">
+                            <span id="settings-room-id">Yükleniyor...</span>
+                            <i class="fa-regular fa-copy"></i>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Bağlantı Süresi</div>
+                        <div class="info-value" id="settings-room-uptime">00:00:00</div>
+                    </div>
+                </div>
                 
                 <div id="tab-devices" class="tab-pane active">
                     <h3 class="tab-title">Cihaz Ayarları</h3>

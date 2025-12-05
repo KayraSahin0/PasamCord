@@ -13,6 +13,7 @@ const adOverlay = document.getElementById('ad-wait-overlay');
 let isFocusMode = false;
 let isRemoteUpdate = false;
 
+// --- EKRAN YÖNETİMİ ---
 export function showAppScreen() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');
@@ -27,26 +28,63 @@ export function showCallScreen() {
 }
 
 export function updateRoomId(id) {
-    document.getElementById('footer-room-id').innerText = "#" + id;
+    const el = document.getElementById('footer-room-id');
+    if(el) el.innerText = "#" + id;
 }
 
 export function resetScreens() { window.location.reload(); }
 
+// --- ODA BİLGİLERİ (AYARLAR) ---
+// ui.js içindeki updateRoomSettingsUI fonksiyonunu güncelle:
+
+export function updateRoomSettingsUI() {
+    const uptimeEl = document.getElementById('settings-room-uptime');
+    const idEl = document.getElementById('settings-room-id');
+    const footerId = document.getElementById('footer-room-id');
+    
+    // DÜZELTME: ID'yi "My-ID" elementinden DEĞİL, Footer'daki Oda ID'sinden al
+    // Çünkü katılımcıysak kendi ID'miz rastgeledir, önemli olan Oda ID'sidir.
+    if(idEl && footerId) {
+        // Eğer footer'da "#ODAMIZ" yazıyorsa henüz bağlanmamıştır, gösterme
+        if(footerId.innerText !== "#ODAMIZ") {
+            idEl.innerText = footerId.innerText; // Örn: #RTXNK
+        } else {
+            idEl.innerText = "Bağlı Değil";
+        }
+    }
+
+    // Süre Sayacı
+    if(uptimeEl && state.connectionStartTime) {
+        const diff = Math.floor((Date.now() - state.connectionStartTime) / 1000);
+        const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+        const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        uptimeEl.innerText = `${h}:${m}:${s}`;
+    }
+}
+
+// --- AYARLAR SEKME YÖNETİMİ ---
 export function openSettingsTab(tabName) {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    
     document.getElementById(`tab-${tabName}`).classList.add('active');
+    
+    // Oda Bilgilerini Güncelle (Eğer o sekme açıldıysa)
+    if(tabName === 'room') updateRoomSettingsUI();
+
     const btns = Array.from(document.querySelectorAll('.nav-btn'));
     const target = btns.find(b => {
-        if(tabName === 'devices') return b.innerText.includes('Ses');
+        if(tabName === 'devices') return b.innerText.includes('Ses ve Görüntü');
         if(tabName === 'quality') return b.innerText.includes('Kalite');
-        if(tabName === 'audio') return b.innerText.includes('Düzeyleri');
+        if(tabName === 'audio') return b.innerText.includes('Ses Düzeyleri');
         if(tabName === 'video') return b.innerText.includes('Görünüm');
+        if(tabName === 'room') return b.innerText.includes('Oda Bilgileri');
     });
     if(target) target.classList.add('active');
 }
 
-// --- CHAT ---
+// --- CHAT PANELİ ---
 export function toggleChatPanel() {
     if (youtubePanel.classList.contains('open')) youtubePanel.classList.remove('open');
     chatPanel.classList.toggle('open');
@@ -58,13 +96,26 @@ export function addMessageToUI(sender, text, isMe) {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${isMe ? 'mine' : 'theirs'}`;
-    msgDiv.innerHTML = `<div class="message-header"><span class="msg-sender">${isMe ? 'Sen' : sender}</span><span class="msg-time">${time}</span></div><div class="msg-text">${escapeHtml(text)}</div>`;
+    
+    msgDiv.innerHTML = `
+        <div class="message-header">
+            <span class="msg-sender">${isMe ? 'Sen' : sender}</span>
+            <span class="msg-time">${time}</span>
+        </div>
+        <div class="msg-text">${escapeHtml(text)}</div>
+    `;
+    
     chatContent.appendChild(msgDiv);
     chatContent.scrollTop = chatContent.scrollHeight;
-    if (!isMe && !chatPanel.classList.contains('open') && chatBadge) chatBadge.classList.remove('hidden');
+
+    if (!isMe && !chatPanel.classList.contains('open')) {
+        if (chatBadge) chatBadge.classList.remove('hidden');
+    }
 }
 
-function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
 
 // --- YOUTUBE & ARAMA ---
 export function toggleYouTubePanel() {
@@ -74,13 +125,17 @@ export function toggleYouTubePanel() {
     
     youtubePanel.classList.toggle('open');
     updateLayout();
-    if (!state.youtubePlayer && window.YT) initYouTubePlayer();
+
+    if (!state.youtubePlayer && window.YT) {
+        initYouTubePlayer();
+    }
 }
 
 function updateLayout() {
     const isChatOpen = chatPanel.classList.contains('open');
     const isYTOpen = youtubePanel.classList.contains('open');
-    if (isChatOpen && isYTOpen) youtubePanel.classList.add('shifted'); else youtubePanel.classList.remove('shifted');
+    if (isChatOpen && isYTOpen) youtubePanel.classList.add('shifted');
+    else youtubePanel.classList.remove('shifted');
 }
 
 function initYouTubePlayer() {
@@ -93,8 +148,16 @@ function initYouTubePlayer() {
 }
 
 function checkYouTubeAds() { if (!state.youtubePlayer || !state.youtubePlayer.getDuration) return; }
-export function showAdOverlay(username) { document.getElementById('ad-user-name').innerText = username; if(adOverlay) adOverlay.classList.remove('hidden'); }
-export function hideAdOverlay() { if(adOverlay) adOverlay.classList.add('hidden'); }
+
+export function showAdOverlay(username) {
+    const el = document.getElementById('ad-user-name');
+    if(el) el.innerText = username;
+    if(adOverlay) adOverlay.classList.remove('hidden');
+}
+
+export function hideAdOverlay() {
+    if(adOverlay) adOverlay.classList.add('hidden');
+}
 
 function onPlayerStateChange(event) {
     if (isRemoteUpdate) return;
@@ -112,7 +175,7 @@ function onPlayerError(event) {
     }
 }
 
-// API ile Arama ve Yükleme
+// ARAMA VE YÜKLEME
 export async function searchAndLoadYouTube(query, isLocal = true) {
     const statusText = document.getElementById('yt-status-text');
     if(statusText) { statusText.innerText = "Aranıyor..."; statusText.style.color = "#aaa"; }
@@ -123,7 +186,7 @@ export async function searchAndLoadYouTube(query, isLocal = true) {
         else if (query.includes('youtu.be/')) videoId = query.split('youtu.be/')[1];
     } else {
         try {
-            // Piped API (Ücretsiz Youtube Arama)
+            // Piped API (Ücretsiz)
             const response = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=videos`);
             const data = await response.json();
             if (data.items && data.items.length > 0) {
@@ -179,10 +242,17 @@ export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
     let cardId = isLocal ? (isScreen ? 'screen-local' : 'video-local') : (isScreen ? `screen-${peerId}` : `video-${peerId}`);
     if (document.getElementById(cardId)) return;
 
-    const card = document.createElement('div'); card.className = 'video-card'; card.id = cardId;
-    const video = document.createElement('video'); video.srcObject = stream; video.autoplay = true; video.playsInline = true;
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    card.id = cardId;
+
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.playsInline = true;
 
     if (isLocal && !isScreen && state.isMirrored) video.classList.add('mirrored');
+    
     if (isLocal) video.muted = true;
     else { if (state.isDeafened) video.muted = true; else video.muted = false; }
 
@@ -215,34 +285,89 @@ export function removeVideoCard(peerId, isScreen = false) {
     if (card) { if (card.classList.contains('featured')) exitFocusMode(); card.remove(); }
 }
 
-// --- FILMSTRIP ---
+// --- FİLM ŞERİDİ (FOCUS MODE) ---
 function toggleFocusMode(selectedCard) {
     if (!isFocusMode) {
-        isFocusMode = true; videoGrid.classList.add('focus-mode'); selectedCard.classList.add('featured');
-        let strip = document.createElement('div'); strip.id = 'filmstrip-overlay'; strip.className = 'filmstrip-overlay';
+        isFocusMode = true;
+        videoGrid.classList.add('focus-mode');
+        selectedCard.classList.add('featured');
+
+        let strip = document.createElement('div');
+        strip.id = 'filmstrip-overlay';
+        strip.className = 'filmstrip-overlay';
         document.getElementById('video-stage').appendChild(strip);
+
         Array.from(videoGrid.children).forEach(child => {
-            if (child.classList.contains('video-card') && !child.classList.contains('featured')) { strip.appendChild(child); child.onclick = () => swapFeatured(child); }
+            if (child.classList.contains('video-card') && !child.classList.contains('featured')) {
+                strip.appendChild(child);
+                child.onclick = () => swapFeatured(child);
+            }
         });
-        const btn = selectedCard.querySelector('.btn-expand'); if(btn) { btn.innerHTML = '<i class="fa-solid fa-compress"></i>'; btn.onclick = (e) => { e.stopPropagation(); exitFocusMode(); }; }
-    } else { if(selectedCard.classList.contains('featured')) exitFocusMode(); else swapFeatured(selectedCard); }
+
+        const btn = selectedCard.querySelector('.btn-expand');
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+            btn.onclick = (e) => { e.stopPropagation(); exitFocusMode(); };
+        }
+
+    } else {
+        if(selectedCard.classList.contains('featured')) exitFocusMode();
+        else swapFeatured(selectedCard);
+    }
 }
 
 function exitFocusMode() {
-    isFocusMode = false; videoGrid.classList.remove('focus-mode');
+    isFocusMode = false;
+    videoGrid.classList.remove('focus-mode');
+    
     const featuredCard = videoGrid.querySelector('.featured');
-    if(featuredCard) { featuredCard.classList.remove('featured'); featuredCard.onclick = null; const btn = featuredCard.querySelector('.btn-expand'); if(btn) { btn.innerHTML = '<i class="fa-solid fa-expand"></i>'; btn.onclick = (e) => { e.stopPropagation(); toggleFocusMode(featuredCard); }; } }
-    const strip = document.getElementById('filmstrip-overlay'); if (strip) { while(strip.firstChild) { const c = strip.firstChild; videoGrid.appendChild(c); c.onclick = null; } strip.remove(); }
+    if(featuredCard) {
+        featuredCard.classList.remove('featured');
+        featuredCard.onclick = null;
+        const btn = featuredCard.querySelector('.btn-expand');
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            btn.onclick = (e) => { e.stopPropagation(); toggleFocusMode(featuredCard); };
+        }
+    }
+
+    const strip = document.getElementById('filmstrip-overlay');
+    if (strip) {
+        while(strip.firstChild) {
+            const c = strip.firstChild;
+            videoGrid.appendChild(c);
+            c.onclick = null;
+        }
+        strip.remove();
+    }
 }
 
 function swapFeatured(newCard) {
-    const strip = document.getElementById('filmstrip-overlay'); const currentFeatured = videoGrid.querySelector('.featured');
+    const strip = document.getElementById('filmstrip-overlay');
+    const currentFeatured = videoGrid.querySelector('.featured');
+
     if (currentFeatured && strip) {
-        currentFeatured.classList.remove('featured'); const btn1 = currentFeatured.querySelector('.btn-expand'); if(btn1) { btn1.innerHTML = '<i class="fa-solid fa-expand"></i>'; btn1.onclick = (e) => { e.stopPropagation(); toggleFocusMode(currentFeatured); }; }
-        currentFeatured.onclick = () => swapFeatured(currentFeatured); strip.appendChild(currentFeatured);
-        videoGrid.appendChild(newCard); newCard.classList.add('featured'); newCard.onclick = null; const btn2 = newCard.querySelector('.btn-expand'); if(btn2) { btn2.innerHTML = '<i class="fa-solid fa-compress"></i>'; btn2.onclick = (e) => { e.stopPropagation(); exitFocusMode(); }; }
+        currentFeatured.classList.remove('featured');
+        const btn1 = currentFeatured.querySelector('.btn-expand');
+        if(btn1) {
+            btn1.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            btn1.onclick = (e) => { e.stopPropagation(); toggleFocusMode(currentFeatured); };
+        }
+        currentFeatured.onclick = () => swapFeatured(currentFeatured);
+        strip.appendChild(currentFeatured);
+
+        videoGrid.appendChild(newCard); 
+        newCard.classList.add('featured');
+        newCard.onclick = null;
+        const btn2 = newCard.querySelector('.btn-expand');
+        if(btn2) {
+            btn2.innerHTML = '<i class="fa-solid fa-compress"></i>';
+            btn2.onclick = (e) => { e.stopPropagation(); exitFocusMode(); };
+        }
     }
 }
+
+// --- YARDIMCILAR ---
 
 export function setLocalMirror(isMirrored) {
     state.isMirrored = isMirrored;
@@ -251,34 +376,64 @@ export function setLocalMirror(isMirrored) {
 }
 
 export function updateParticipantsUI() {
-    if (!participantList) return; participantList.innerHTML = "";
+    if (!participantList) return;
+    participantList.innerHTML = "";
+    
     const list = (state.participantList.length > 0) ? state.participantList : [{ name: state.myUsername, id: state.peer?.id, isMe: true }];
-    list.forEach(u => addParticipantRow(u.name + (u.id === state.peer?.id ? " (Sen)" : ""), u.id === state.peer?.id));
+    
+    list.forEach(u => {
+        const isMe = (u.id === state.peer?.id);
+        addParticipantRow(u.name + (isMe ? " (Sen)" : ""), isMe);
+    });
+    
     if(participantBadge) participantBadge.innerText = list.length;
 }
 
 function addParticipantRow(name, isMe) {
-    const li = document.createElement('li'); li.innerHTML = `<div class="user-avatar" style="background-color: ${isMe ? '#5865F2' : '#faa61a'}; width:32px; height:32px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold;">${name.charAt(0).toUpperCase()}</div><span style="font-weight: 500; font-size: 0.9rem;">${name}</span>`;
+    const li = document.createElement('li');
+    li.innerHTML = `
+        <div class="user-avatar" style="background-color: ${isMe ? '#5865F2' : '#faa61a'}; width:32px; height:32px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold;">${name.charAt(0).toUpperCase()}</div>
+        <span style="font-weight: 500; font-size: 0.9rem;">${name}</span>
+    `;
     participantList.appendChild(li);
 }
 
-export function updateMyId(id) { const el = document.getElementById('my-id'); if(el) el.innerText = id; }
+export function updateMyId(id) {
+    const el = document.getElementById('my-id');
+    if(el) { el.innerText = id; el.style.color = ""; }
+}
+
 export function updateNameTag(peerId, name) {
-    let el = document.getElementById(`name-video-${peerId}`); if(el) el.innerText = name;
-    el = document.getElementById(`name-screen-${peerId}`); if(el) el.innerText = name + " (Ekran)";
-    const card = document.getElementById(`video-${peerId}`); if(card) { const av = card.querySelector('.avatar-circle'); if(av) av.innerText = name.charAt(0).toUpperCase(); }
+    let el = document.getElementById(`name-video-${peerId}`);
+    if(el) el.innerText = name;
+    
+    el = document.getElementById(`name-screen-${peerId}`);
+    if(el) el.innerText = name + " (Ekran)";
+    
+    const card = document.getElementById(`video-${peerId}`);
+    if(card) {
+        const av = card.querySelector('.avatar-circle');
+        if(av) av.innerText = name.charAt(0).toUpperCase();
+    }
 }
 
 function monitorVideoState(stream, card) {
     const interval = setInterval(() => {
         if (!card.isConnected) { clearInterval(interval); return; }
         const track = stream.getVideoTracks()[0];
-        if (track && track.enabled && track.readyState === 'live') { card.classList.add('video-active'); } else { card.classList.remove('video-active'); }
+        if (track && track.enabled && track.readyState === 'live') {
+            card.classList.add('video-active');
+        } else {
+            card.classList.remove('video-active');
+        }
     }, 1000);
 }
 
 function startClock() {
     setInterval(() => {
-        const now = new Date(); const t = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); const el = document.getElementById('clock-display'); if(el) el.innerText = t;
+        const now = new Date();
+        const t = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const el = document.getElementById('clock-display');
+        if(el) el.innerText = t;
     }, 1000);
 }
