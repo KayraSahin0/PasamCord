@@ -1,10 +1,13 @@
-// auth.js - Firebase Kimlik Doğrulama
+// auth.js - Firebase Kimlik ve Veritabanı Yönetimi
 import { state } from './state.js';
 
-// Firebase SDK'larını CDN üzerinden import ediyoruz (npm gerektirmez)
+// Firebase SDK'ları
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// YENİ: Firestore Eklendi
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// --- KENDİ FIREBASE AYARLARINIZ ---
 const firebaseConfig = {
   apiKey: "AIzaSyASvvDp6M0ov6JSAWL0RD3zPJYaBw4H3fs",
   authDomain: "pasamcord.firebaseapp.com",
@@ -15,40 +18,41 @@ const firebaseConfig = {
   measurementId: "G-NKKEGHBJW7"
 };
 
-// Firebase'i Başlat
+// Uygulamayı Başlat
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// Google ile Giriş Yap
+// YENİ: Veritabanını Dışa Aktar (Export)
+export const db = getFirestore(app);
+
+// Google Giriş
 export async function loginWithGoogle() {
     try {
         const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        console.log("Google Girişi Başarılı:", user.displayName);
-        return user;
+        console.log("Giriş Başarılı:", result.user.displayName);
+        return result.user;
     } catch (error) {
         console.error("Giriş Hatası:", error);
-        alert("Google girişi başarısız oldu: " + error.message);
+        alert("Giriş yapılamadı: " + error.message);
         return null;
     }
 }
 
-// Çıkış Yap
+// Çıkış
 export async function logoutUser() {
     try {
         await signOut(auth);
-        window.location.reload(); // Sayfayı yenile
+        window.location.reload();
     } catch (error) {
         console.error("Çıkış Hatası:", error);
     }
 }
 
-// Oturum Durumunu Dinle (Sayfa yenilendiğinde hatırlar)
+// Oturum Kontrolü
 export function checkAuthState(callback) {
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // Kullanıcı zaten giriş yapmış
             state.userProfile = {
                 name: user.displayName,
                 photo: user.photoURL,
@@ -57,7 +61,6 @@ export function checkAuthState(callback) {
             };
             callback(true, user);
         } else {
-            // Giriş yapılmamış
             state.userProfile = null;
             callback(false, null);
         }

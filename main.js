@@ -3,22 +3,48 @@ import * as UI from './ui.js';
 import * as Audio from './audio.js';
 import * as Network from './network.js';
 import * as Auth from './auth.js';
+import * as Spotify from './spotify.js';
+import * as Apps from './apps.js';
+
+// --- 0. KRİTİK: POPUP KONTROLÜ (Bunu En Başa Ekleyin) ---
+// Eğer bu sayfa bir popup ise ve URL'de Spotify token varsa:
+if (window.opener && window.location.hash.includes('access_token')) {
+    console.log("Popup modu algılandı. Token ana pencereye gönderiliyor...");
+    
+    // Tokeni URL'den al
+    const hash = window.location.hash;
+    const token = new URLSearchParams(hash.substring(1)).get('access_token');
+
+    // Ana pencereye mesaj at
+    window.opener.postMessage({ type: 'SPOTIFY_TOKEN', token: token }, '*');
+    
+    // Kendini kapat
+    window.close();
+    
+    // Kodun geri kalanını çalıştırmayı durdur (Gereksiz yükleme yapmasın)
+    throw new Error("Popup kapatılıyor..."); 
+}
 
 // --- 1. SAYFA YÜKLENİNCE ---
 window.addEventListener('DOMContentLoaded', () => {
-    const chatInput = document.getElementById('chat-input');
-    if(chatInput) {
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') window.sendChat();
-        });
-    }
-    
+
     const ytInput = document.getElementById('yt-url-input');
     if(ytInput) {
         ytInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') window.handleYouTubeSearch();
         });
     }
+
+    // Spotify Mesajlarını Dinle (Popup'tan gelen mesajı yakala)
+    window.addEventListener('message', (event) => {
+        if (event.data.type === 'SPOTIFY_TOKEN') {
+            console.log("Spotify Token Alındı:", event.data.token);
+            Spotify.handleTokenFromPopup(event.data.token); // Bu fonksiyonu spotify.js'e ekleyeceğiz
+        }
+    });
+
+    // UYGULAMALARI YÜKLE (YENİ)
+    Apps.initApps();
 
     Auth.checkAuthState((isLoggedIn, user) => {
         if (isLoggedIn) {
@@ -79,8 +105,20 @@ window.startCall = function() {
 };
 
 window.endCall = function() {
+    // 1. Ağ Bağlantılarını Kes
     Network.closeAllConnections();
+    
+    // 2. State'deki peer listesini temizle
+    for (let key in state.peers) delete state.peers[key];
+    state.participantList = [{ id: state.peer.id, name: state.myUsername, isMe: true }];
+
+    // 3. Arayüzü Sıfırla (Reload yapmadan)
     UI.resetScreens();
+    
+    // 4. Kendi videomuzu tekrar ızgaraya ekle (Çünkü resetScreens grid'i sildi)
+    if (state.localStream) {
+        UI.addVideoCard('local', state.localStream, state.myUsername, true);
+    }
 };
 
 // --- 4. MEDYA ---
@@ -185,7 +223,14 @@ window.sendChat = function() {
     }
 };
 
-// --- 7. SPOTIFY & YOUTUBE ---
+
+// --- 7. UYGULAMALAR (YENİ EKLENEN KISIM) ---
+window.toggleApps = function() { Apps.toggleAppsPanel(); };
+window.adminLogin = function() { Apps.adminLogin(); };
+window.openAddModal = function(type) { Apps.openAddModal(type); };
+window.saveNewApp = function() { Apps.saveNewApp(); };
+
+// --- 8. SPOTIFY & YOUTUBE ---
 window.startSpotifyShare = function() { document.getElementById('spotify-guide-modal').classList.remove('hidden'); };
 window.confirmSpotifyShare = async function() {
     document.getElementById('spotify-guide-modal').classList.add('hidden');
@@ -201,7 +246,7 @@ window.handleYouTubeSearch = function() {
 };
 window.loadYouTubeVideo = window.handleYouTubeSearch;
 
-// --- 8. AYARLAR ---
+// --- 9. AYARLAR ---
 window.changeOutputVolume = (val) => Audio.setOutputVolume(val);
 window.changeMicGain = (val) => Audio.setMicGain(val);
 window.changeAudioInput = () => { Audio.switchAudioInput(document.getElementById('audio-input-select').value); };
@@ -219,7 +264,8 @@ window.changeVideoQuality = function() {
     Audio.applyVideoQuality();
 };
 
-window.openTab = (name) => UI.openSettingsTab(name);
+// (Admin sekmesini tanıması için)
+window.openTab = function(name) { UI.openSettingsTab(name); };
 window.toggleMirrorSetting = (checked) => UI.setLocalMirror(checked);
 window.toggleSettings = () => document.getElementById('settings-modal').classList.toggle('hidden');
 window.toggleParticipants = () => {
@@ -228,6 +274,8 @@ window.toggleParticipants = () => {
     const yt = document.getElementById('youtube-panel');
     if(yt.classList.contains('open')) yt.classList.remove('open');
     document.getElementById('participants-panel').classList.toggle('open');
+    const apps = document.getElementById('apps-panel');
+    if(apps.classList.contains('open')) apps.classList.remove('open');
 };
 
 window.copyId = () => {
@@ -251,3 +299,56 @@ function startTimer() {
         UI.updateRoomSettingsUI();
     }, 1000);
 }
+
+// UI FONKSİYONLARI
+window.toggleSpotifyPanel = function() {
+    const p = document.getElementById('spotify-panel');
+    p.classList.toggle('open');
+    // Diğer panelleri kapat
+    document.getElementById('chat-panel').classList.remove('open');
+    document.getElementById('youtube-panel').classList.remove('open');
+};
+
+window.loginToSpotify = function() {
+    Spotify.loginToSpotify();
+};
+
+window.searchSpotify = function() {
+    const q = document.getElementById('sp-search-input').value;
+    if(q) Spotify.searchSpotify(q);
+};
+
+// Başlat Tuşu (Arama Sonucundan)
+window.spCmdPlay = function(uri) {
+    sendSpotifyCommand('play', uri, 0);
+};
+
+// Sıraya Ekle Tuşu
+window.spCmdQueue = function(uri, name) {
+    sendSpotifyCommand('queue', uri, 0, name);
+};
+
+// Player Kontrolleri
+window.spPlayPause = function() {
+    if(!state.spotifyPlayer) return;
+    state.spotifyPlayer.getCurrentState().then(s => {
+        if(!s) return;
+        if(s.paused) {
+            sendSpotifyCommand('play', s.track_window.current_track.uri, s.position);
+        } else {
+            sendSpotifyCommand('pause', null);
+        }
+    });
+};
+
+window.spNext = function() {
+    if(state.spotifyPlayer) state.spotifyPlayer.nextTrack();
+    // Not: Next track API üzerinden tetiklenmeli ve yeni şarkı 'play' komutu olarak gönderilmeli
+};
+
+window.spPrev = function() {
+    if(state.spotifyPlayer) state.spotifyPlayer.previousTrack();
+};
+
+// --- YENİ WINDOW BAĞLANTISI (En alta ekleyin) ---
+window.deleteApp = function(id) { Apps.deleteApp(id); };

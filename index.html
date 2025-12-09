@@ -85,6 +85,10 @@
                 <span id="clock-display">00:00</span>
                 <span class="separator">|</span>
                 <span id="footer-room-id" class="room-id-tag">#ODAMIZ</span>
+                <span class="separator">|</span>
+                <button class="ctrl-btn" onclick="window.toggleApps()" title="Uygulamalar">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
             </div>
             <div class="footer-center">
                 <button class="ctrl-btn" id="mute-btn" onclick="window.toggleMute()" title="Mikrofon">
@@ -96,15 +100,6 @@
                 <button class="ctrl-btn" id="screen-btn" onclick="window.toggleScreenShare()" title="Ekran Paylaş">
                     <i class="fa-solid fa-desktop" id="screen-icon"></i>
                 </button>
-                
-                <button class="ctrl-btn btn-spotify" onclick="window.startSpotifyShare()" title="Spotify">
-                    <i class="fa-brands fa-spotify"></i>
-                </button>
-
-                <button class="ctrl-btn btn-youtube" onclick="window.toggleYouTube()" title="YouTube">
-                    <i class="fa-brands fa-youtube"></i>
-                </button>
-
                 <button class="ctrl-btn" id="deafen-btn" onclick="window.toggleDeafen()" title="Sesi Kapat">
                     <i class="fa-solid fa-headphones" id="deafen-icon"></i>
                 </button>
@@ -115,7 +110,22 @@
                     <i class="fa-solid fa-phone-slash"></i>
                 </button>
             </div>
+
             <div class="footer-right">
+                
+
+                <div class="separator" style="height: 20px; border-right: 1px solid #444; margin: 0 10px;"></div>
+
+                <button class="ctrl-btn btn-spotify" onclick="window.toggleSpotifyPanel()" title="Spotify" style="width: 40px; height: 40px; font-size: 1rem; border:none;">
+                    <i class="fa-brands fa-spotify"></i>
+                </button>
+
+                <button class="ctrl-btn btn-youtube" onclick="window.toggleYouTube()" title="YouTube" style="width: 40px; height: 40px; font-size: 1rem; border:none;">
+                    <i class="fa-brands fa-youtube"></i>
+                </button>
+
+                <div class="separator" style="height: 20px; border-right: 1px solid #444; margin: 0 10px;"></div>
+
                 <button class="icon-btn" onclick="window.toggleParticipants()" title="Katılımcılar">
                     <i class="fa-solid fa-users"></i>
                     <span id="participant-badge" class="badge">1</span>
@@ -126,6 +136,15 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <div class="side-panel" id="apps-panel" style="background: #181818;">
+        <div class="panel-header">
+            <h3>Uygulamalar</h3>
+            <button class="close-btn" onclick="window.toggleApps()">&times;</button>
+        </div>
+        <div class="panel-content" id="apps-grid">
+            </div>
     </div>
 
     <div class="side-panel" id="participants-panel">
@@ -167,22 +186,53 @@
         </div>
     </div>
 
-    <div id="spotify-guide-modal" class="modal-overlay hidden">
-        <div class="modal-box" style="width: 450px;">
-            <div class="modal-header" style="background: #1DB954;">
-                <h3 style="color:white;"><i class="fa-brands fa-spotify"></i> Spotify Paylaşımı</h3>
-                <button onclick="document.getElementById('spotify-guide-modal').classList.add('hidden')" class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom:15px;">Müziği diğerlerine dinletmek için:</p>
-                <ul style="text-align: left; margin: 0 20px; color: #ccc; line-height: 1.6;">
-                    <li><strong>Web Player:</strong> Chrome Sekmesi > Spotify > Sesi Paylaş.</li>
-                    <li><strong>Masaüstü Uygulaması:</strong> Tüm Ekran > Sesi Paylaş.</li>
-                </ul>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn-primary" style="background: #1DB954; color: white;" onclick="window.confirmSpotifyShare()">Anladım, Paylaş</button>
+    <div class="side-panel spotify-panel" id="spotify-panel" style="width: 400px; right: -420px;">
+        <div class="panel-header" style="background: #1DB954;">
+            <h3 style="color:white;"><i class="fa-brands fa-spotify"></i> Spotify Party</h3>
+            <button class="close-btn" onclick="window.toggleSpotifyPanel()" style="color:white;">&times;</button>
+        </div>
+        
+        <div id="spotify-login-view" class="spotify-content">
+            <p style="text-align:center; margin-bottom:20px; color:#ccc;">Birlikte dinlemek için Premium hesabınızla giriş yapın.</p>
+            <button class="btn-spotify-login" onclick="window.loginToSpotify()">
+                Spotify ile Giriş Yap
+            </button>
+        </div>
+
+        <div id="spotify-player-view" class="spotify-content hidden">
+            
+            <div class="current-track-info">
+                <img id="sp-album-art" src="" alt="Album Art">
+                <div class="track-details">
+                    <h4 id="sp-track-name">Şarkı Seçilmedi</h4>
+                    <p id="sp-artist-name">...</p>
                 </div>
             </div>
+
+            <div class="sp-controls">
+                <button onclick="window.spPrev()"><i class="fa-solid fa-backward-step"></i></button>
+                <button onclick="window.spPlayPause()" id="sp-play-btn"><i class="fa-solid fa-play"></i></button>
+                <button onclick="window.spNext()"><i class="fa-solid fa-forward-step"></i></button>
+            </div>
+            
+            <div class="sp-progress-container">
+                 <div id="sp-progress-bar" class="sp-progress-bar"></div>
+            </div>
+
+            <hr style="border-color:#333; margin: 15px 0;">
+
+            <div class="yt-input-group">
+                <input type="text" id="sp-search-input" placeholder="Şarkı adı veya Link...">
+                <button onclick="window.searchSpotify()" style="background:#1DB954;">Ara</button>
+            </div>
+
+            <div class="sp-queue-list">
+                <h5>Sıradakiler</h5>
+                <ul id="sp-queue-ul">
+                    </ul>
+            </div>
+            
+            <p id="sp-status" class="yt-hint">Odada herkesin Premium hesabı olmalıdır.</p>
         </div>
     </div>
 
@@ -194,6 +244,7 @@
                 <button class="nav-btn" onclick="window.openTab('quality')">Görüntü Kalitesi</button>
                 <button class="nav-btn" onclick="window.openTab('audio')">Ses Düzeyleri</button>
                 <button class="nav-btn" onclick="window.openTab('video')">Görünüm</button>
+                <button class="nav-btn" onclick="window.openTab('admin')">Yönetici Girişi</button>
                 <button class="nav-btn btn-logout-settings" onclick="window.handleLogout()">Çıkış Yap</button>
             </div>
             <div class="settings-content">
@@ -241,12 +292,64 @@
                     </div>
                 </div>
 
+                <div id="tab-admin" class="tab-pane">
+                    <h3 class="tab-title">Yönetici Paneli</h3>
+    
+                    <div id="admin-login-form">
+                        <div class="form-group">
+                            <label>Kullanıcı Adı</label>
+                             <input type="text" id="admin-user" style="width:100%; padding:10px; background:#1e1f22; border:none; color:white; border-radius:4px; margin-bottom:10px;">
+                        </div>
+                        <div class="form-group">
+                            <label>Şifre</label>
+                            <input type="password" id="admin-pass" style="width:100%; padding:10px; background:#1e1f22; border:none; color:white; border-radius:4px; margin-bottom:10px;">
+                        </div>
+                        <button class="btn-save" onclick="window.adminLogin()">Giriş Yap</button>
+                    </div>
+
+                    <div id="admin-controls" class="hidden">
+                        <div style="background: rgba(35, 165, 89, 0.1); border: 1px solid #23a559; padding: 15px; border-radius: 8px; color: #23a559;">
+                            <i class="fa-solid fa-check-circle"></i> Yönetici girişi başarılı.
+                        </div>
+                        <p style="margin-top:15px; color:#ccc; font-size:0.9rem;">
+                            Artık "Uygulamalar" panelini açarak yeni uygulama veya web sitesi ekleyebilirsiniz.
+                        </p>
+                    </div>
+                </div>
+
                 <div class="settings-footer">
                     <button class="btn-save" onclick="window.toggleSettings()">Kaydet ve Kapat</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <div id="add-app-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="width: 400px;">
+        <div class="modal-header">
+            <h3>Yeni Ekle</h3>
+            <button onclick="document.getElementById('add-app-modal').classList.add('hidden')" class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="app-type-input">
+            
+            <div class="form-group">
+                <label>İsim</label>
+                <input type="text" id="app-name-input" class="styled-input" placeholder="Örn: Google">
+            </div>
+            <div class="form-group">
+                <label>Logo URL (Kare Resim Linki)</label>
+                <input type="text" id="app-logo-input" class="styled-input" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label id="app-target-label">Hedef</label>
+                <input type="text" id="app-target-input" class="styled-input">
+            </div>
+            
+            <button class="btn-primary" onclick="window.saveNewApp()">Kaydet</button>
+        </div>
+    </div>
+</div>
 
     <script type="module" src="main.js"></script>
 </body>

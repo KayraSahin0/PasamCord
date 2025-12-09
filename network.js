@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { updateMyId, updateRoomId, addVideoCard, removeVideoCard, updateParticipantsUI, updateNameTag, showCallScreen, addMessageToUI, loadYouTubeVideoById, syncYouTubeAction } from './ui.js';
+import * as Spotify from './spotify.js';
 
 let connectionTimeout = null;
 
@@ -292,6 +293,14 @@ function setupDataConnection(conn) {
                 if (pid !== state.peer.id && !state.peers[pid]) connectToPeer(pid);
             });
         }
+
+        if (data.type === 'sp-sync') {
+            Spotify.handleSyncCommand(data.action, data);
+        }
+        if (data.type === 'sp-ready') {
+            console.log("Kullanıcı Spotify'a hazır:", conn.peer);
+            // İsterseniz burada "Herkes hazır mı?" kontrolü yapabilirsiniz.
+        }
     });
 
     conn.on('close', () => removePeer(conn.peer));
@@ -299,9 +308,33 @@ function setupDataConnection(conn) {
 }
 
 export function closeAllConnections() {
+    // Aktif bağlantıları kapat
     Object.keys(state.peers).forEach(k => {
         if(state.peers[k].call) state.peers[k].call.close();
         if(state.peers[k].conn) state.peers[k].conn.close();
     });
+    
+    // Listeyi sıfırla
+    state.peers = {};
+    state.participantList = [];
+    state.lastHeartbeat = {};
 }
 
+export function sendSpotifyCommand(action, uri, position = 0, name = "") {
+    const data = {
+        type: 'sp-sync',
+        action: action,
+        uri: uri,
+        position: position,
+        name: name,
+        timestamp: Date.now()
+    };
+    // Önce kendimiz uygulayalım
+    Spotify.handleSyncCommand(action, data);
+    // Sonra herkese gönderelim
+    broadcastData(data);
+}
+
+export function sendSpotifyStatus(status) {
+    broadcastData({ type: 'sp-ready', status: status });
+}

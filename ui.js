@@ -24,7 +24,12 @@ export function showAppScreen() {
 export function showCallScreen() {
     document.getElementById('connect-panel').classList.add('hidden');
     const remoteId = document.getElementById('remote-id').value || "Oda";
-    document.getElementById('footer-room-id').innerText = "#" + remoteId;
+    // document.getElementById('footer-room-id').innerText = "#" + remoteId;
+
+    const footerIdEl = document.getElementById('footer-room-id');
+    if (footerIdEl) {
+        footerIdEl.innerText = "#" + remoteId;
+    }
 }
 
 export function updateRoomId(id) {
@@ -32,10 +37,36 @@ export function updateRoomId(id) {
     if(el) el.innerText = "#" + id;
 }
 
-export function resetScreens() { window.location.reload(); }
+export function resetScreens() {
+    // 1. Bağlantı Panelini Tekrar Göster
+    document.getElementById('connect-panel').classList.remove('hidden');
+    
+    // 2. Video Izgarasını Temizle (Local hariç veya tamamen temizleyip tekrar ekleyebiliriz)
+    // En temiz yöntem: Hepsini silip state'deki stream ile local'i tekrar oluşturmak
+    const videoGrid = document.getElementById('video-grid');
+    videoGrid.innerHTML = ''; 
+    
+    // 3. Panelleri Kapat
+    document.getElementById('chat-panel').classList.remove('open');
+    document.getElementById('participants-panel').classList.remove('open');
+    const yt = document.getElementById('youtube-panel');
+    if(yt) yt.classList.remove('open');
+    
+    // 4. Alt bilgileri sıfırla
+    document.getElementById('footer-room-id').innerText = "#ODAMIZ";
+    
+    // 5. Film Şeridini Temizle (Varsa)
+    const strip = document.getElementById('filmstrip-overlay');
+    if(strip) strip.remove();
+    
+    // 6. Grid modunu sıfırla
+    videoGrid.classList.remove('focus-mode');
+    
+    // NOT: Local videoyu tekrar eklememiz lazım çünkü grid'i sildik.
+    // main.js içinde endCall'dan sonra restoreLocalVideo çağıracağız.
+}
 
 // --- ODA BİLGİLERİ (AYARLAR) ---
-// ui.js içindeki updateRoomSettingsUI fonksiyonunu güncelle:
 
 export function updateRoomSettingsUI() {
     const uptimeEl = document.getElementById('settings-room-uptime');
@@ -70,16 +101,15 @@ export function openSettingsTab(tabName) {
     
     document.getElementById(`tab-${tabName}`).classList.add('active');
     
-    // Oda Bilgilerini Güncelle (Eğer o sekme açıldıysa)
-    if(tabName === 'room') updateRoomSettingsUI();
-
     const btns = Array.from(document.querySelectorAll('.nav-btn'));
     const target = btns.find(b => {
-        if(tabName === 'devices') return b.innerText.includes('Ses ve Görüntü');
+        if(tabName === 'devices') return b.innerText.includes('Ses');
         if(tabName === 'quality') return b.innerText.includes('Kalite');
-        if(tabName === 'audio') return b.innerText.includes('Ses Düzeyleri');
+        if(tabName === 'audio') return b.innerText.includes('Düzeyleri');
         if(tabName === 'video') return b.innerText.includes('Görünüm');
         if(tabName === 'room') return b.innerText.includes('Oda Bilgileri');
+        // YENİ EKLENEN:
+        if(tabName === 'admin') return b.innerText.includes('Yönetici');
     });
     if(target) target.classList.add('active');
 }
@@ -436,4 +466,11 @@ function startClock() {
         const el = document.getElementById('clock-display');
         if(el) el.innerText = t;
     }, 1000);
+}
+
+export function restoreLocalVideoCard(stream, name, isMirrored) {
+    // Grid temizlendiği için kendi kartımızı geri koyuyoruz
+    import('./ui.js').then(module => {
+        module.addVideoCard('local', stream, name, true);
+    });
 }
