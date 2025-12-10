@@ -43,6 +43,9 @@ export async function initAudioVideo() {
 
         // --- SES MOTORU (Web Audio API) ---
         state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (state.audioContext.state === 'suspended') {
+            await state.audioContext.resume();
+        }
         state.micSource = state.audioContext.createMediaStreamSource(rawStream);
         state.gainNode = state.audioContext.createGain();
         state.gainNode.gain.value = 1.0;

@@ -281,6 +281,14 @@ export function addVideoCard(peerId, stream, name, isLocal, isScreen = false) {
     video.autoplay = true;
     video.playsInline = true;
 
+    video.onloadedmetadata = async () => {
+        try {
+            await video.play();
+        } catch (e) {
+            console.warn("Otomatik oynatma engellendi, kullanıcı etkileşimi bekleniyor:", e);
+        }
+    };
+
     if (isLocal && !isScreen && state.isMirrored) video.classList.add('mirrored');
     
     if (isLocal) video.muted = true;
@@ -417,6 +425,15 @@ export function updateParticipantsUI() {
     });
     
     if(participantBadge) participantBadge.innerText = list.length;
+    
+    // Premium kullanıcı sayısını güncelle
+    import('./spotify.js').then(module => {
+        if (module.updatePremiumUsersUI) {
+            module.updatePremiumUsersUI();
+        }
+    }).catch(() => {
+        // Spotify modülü yüklenmemişse hata verme
+    });
 }
 
 function addParticipantRow(name, isMe) {

@@ -42,6 +42,10 @@ export const state = {
     isSpotifyReady: false,
     currentTrackUri: null,
     spotifyQueue: [],
+    isSpotifyPremium: false,
+    spotifyPremiumUsers: {}, // { peerId: { name, isPremium } }
+    previousTrackPosition: 0,
+    wasPlaying: false,
 
     // Uygulama, Websitesi EKLEME
     isAdmin: false,

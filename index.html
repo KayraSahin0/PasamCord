@@ -187,54 +187,72 @@
     </div>
 
     <div class="side-panel spotify-panel" id="spotify-panel" style="width: 400px; right: -420px;">
-        <div class="panel-header" style="background: #1DB954;">
-            <h3 style="color:white;"><i class="fa-brands fa-spotify"></i> Spotify Party</h3>
-            <button class="close-btn" onclick="window.toggleSpotifyPanel()" style="color:white;">&times;</button>
+    <div class="panel-header" style="background: #1DB954;">
+        <h3 style="color:white;"><i class="fa-brands fa-spotify"></i> Spotify Party</h3>
+        <button class="close-btn" onclick="window.toggleSpotifyPanel()" style="color:white;">&times;</button>
+    </div>
+    
+    <div id="spotify-login-view" class="spotify-content">
+        <p style="text-align:center; margin-bottom:20px; color:#ccc;">Premium hesabınızla giriş yapın.</p>
+        <div style="background:#1a1a1a; padding:10px; border-radius:4px; margin-bottom:15px; font-size:0.85rem; color:#aaa;">
+            <i class="fa-solid fa-info-circle" style="color:#1DB954;"></i> 
+            <strong>Önemli:</strong> Spotify Developer Dashboard'da Redirect URI olarak şunu ekleyin:<br>
+            <code style="color:#1DB954; word-break:break-all;" id="spotify-redirect-uri-display"></code>
+        </div>
+        <button class="btn-spotify-login" onclick="window.loginToSpotify()">
+            <i class="fa-brands fa-spotify"></i> Spotify ile Giriş
+        </button>
+    </div>
+
+    <div id="spotify-player-view" class="spotify-content hidden">
+        <!-- Mevcut çalan şarkı -->
+        <div class="current-track-info">
+            <img id="sp-album-art" src="" alt="Album Art">
+            <div class="track-details">
+                <h4 id="sp-track-name">Şarkı Seçilmedi</h4>
+                <p id="sp-artist-name">...</p>
+            </div>
+        </div>
+
+        <!-- Kontroller -->
+        <div class="sp-controls">
+            <button onclick="window.spPrev()"><i class="fa-solid fa-backward-step"></i></button>
+            <button onclick="window.spPlayPause()" id="sp-play-btn"><i class="fa-solid fa-play"></i></button>
+            <button onclick="window.spNext()"><i class="fa-solid fa-forward-step"></i></button>
         </div>
         
-        <div id="spotify-login-view" class="spotify-content">
-            <p style="text-align:center; margin-bottom:20px; color:#ccc;">Birlikte dinlemek için Premium hesabınızla giriş yapın.</p>
-            <button class="btn-spotify-login" onclick="window.loginToSpotify()">
-                Spotify ile Giriş Yap
+        <!-- İlerleme çubuğu -->
+        <div class="sp-progress-container">
+             <div id="sp-progress-bar" class="sp-progress-bar"></div>
+        </div>
+
+        <hr style="border-color:#333; margin: 15px 0;">
+
+        <!-- Arama kısmı -->
+        <div class="yt-input-group">
+            <input type="text" id="sp-search-input" placeholder="Şarkı adı yazın..." 
+                   onkeypress="if(event.key === 'Enter') window.searchSpotify()">
+            <button onclick="window.searchSpotify()" style="background:#1DB954;">
+                <i class="fa-solid fa-search"></i>
             </button>
         </div>
 
-        <div id="spotify-player-view" class="spotify-content hidden">
-            
-            <div class="current-track-info">
-                <img id="sp-album-art" src="" alt="Album Art">
-                <div class="track-details">
-                    <h4 id="sp-track-name">Şarkı Seçilmedi</h4>
-                    <p id="sp-artist-name">...</p>
-                </div>
-            </div>
-
-            <div class="sp-controls">
-                <button onclick="window.spPrev()"><i class="fa-solid fa-backward-step"></i></button>
-                <button onclick="window.spPlayPause()" id="sp-play-btn"><i class="fa-solid fa-play"></i></button>
-                <button onclick="window.spNext()"><i class="fa-solid fa-forward-step"></i></button>
-            </div>
-            
-            <div class="sp-progress-container">
-                 <div id="sp-progress-bar" class="sp-progress-bar"></div>
-            </div>
-
-            <hr style="border-color:#333; margin: 15px 0;">
-
-            <div class="yt-input-group">
-                <input type="text" id="sp-search-input" placeholder="Şarkı adı veya Link...">
-                <button onclick="window.searchSpotify()" style="background:#1DB954;">Ara</button>
-            </div>
-
-            <div class="sp-queue-list">
-                <h5>Sıradakiler</h5>
-                <ul id="sp-queue-ul">
-                    </ul>
-            </div>
-            
-            <p id="sp-status" class="yt-hint">Odada herkesin Premium hesabı olmalıdır.</p>
+        <!-- Arama sonuçları ve kuyruk listesi -->
+        <div class="sp-queue-list">
+            <h5>Arama Sonuçları & Sıradakiler</h5>
+            <ul id="sp-queue-ul">
+                <!-- Buraya arama sonuçları ve kuyruk listesi gelecek -->
+            </ul>
+        </div>
+        
+        <p id="sp-status" class="yt-hint">
+            <i class="fa-solid fa-info-circle"></i> Herkesin Premium hesabı gereklidir.
+        </p>
+        <div id="sp-premium-count" style="padding:10px; background:#1a1a1a; border-radius:4px; margin-top:10px; text-align:center; color:#1DB954; font-weight:bold;">
+            <i class="fa-solid fa-users"></i> <span id="sp-premium-text">0 / 0 kişi Premium hesabıyla giriş yaptı.</span>
         </div>
     </div>
+</div>
 
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="settings-container">

@@ -219,6 +219,14 @@ function removePeer(peerId) {
         delete state.peers[peerId];
     }
     if (state.lastHeartbeat[peerId]) delete state.lastHeartbeat[peerId];
+    // Premium kullanıcı listesinden de kaldır
+    if (state.spotifyPremiumUsers && state.spotifyPremiumUsers[peerId]) {
+        delete state.spotifyPremiumUsers[peerId];
+        // UI'ı güncelle
+        import('./spotify.js').then(module => {
+            module.updatePremiumUsersUI();
+        });
+    }
     removeVideoCard(peerId, false);
     removeVideoCard(peerId, true);
     broadcastParticipants();
@@ -299,7 +307,10 @@ function setupDataConnection(conn) {
         }
         if (data.type === 'sp-ready') {
             console.log("Kullanıcı Spotify'a hazır:", conn.peer);
-            // İsterseniz burada "Herkes hazır mı?" kontrolü yapabilirsiniz.
+        }
+        if (data.type === 'sp-premium-status') {
+            const peerName = state.peers[conn.peer]?.name || "Bilinmeyen";
+            Spotify.handlePremiumStatus(conn.peer, peerName, data.isPremium);
         }
     });
 
@@ -320,21 +331,33 @@ export function closeAllConnections() {
     state.lastHeartbeat = {};
 }
 
-export function sendSpotifyCommand(action, uri, position = 0, name = "") {
+export function sendSpotifyCommand(action, uri, position = 0, name = "", artist = "", albumArt = "") {
     const data = {
         type: 'sp-sync',
         action: action,
         uri: uri,
         position: position,
         name: name,
+        artist: artist,
+        albumArt: albumArt, // Yeni parametre
         timestamp: Date.now()
     };
+    
     // Önce kendimiz uygulayalım
     Spotify.handleSyncCommand(action, data);
+    
     // Sonra herkese gönderelim
     broadcastData(data);
 }
 
 export function sendSpotifyStatus(status) {
     broadcastData({ type: 'sp-ready', status: status });
+}
+
+export function sendSpotifyPremiumStatus(isPremium) {
+    broadcastData({ 
+        type: 'sp-premium-status', 
+        isPremium: isPremium,
+        name: state.myUsername
+    });
 }

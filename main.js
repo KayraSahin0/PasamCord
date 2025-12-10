@@ -8,21 +8,37 @@ import * as Apps from './apps.js';
 
 // --- 0. KRİTİK: POPUP KONTROLÜ (Bunu En Başa Ekleyin) ---
 // Eğer bu sayfa bir popup ise ve URL'de Spotify token varsa:
-if (window.opener && window.location.hash.includes('access_token')) {
-    console.log("Popup modu algılandı. Token ana pencereye gönderiliyor...");
+if (window.opener && window.location.hash) {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const token = params.get('access_token');
+    const error = params.get('error');
+    const errorDescription = params.get('error_description');
     
-    // Tokeni URL'den al
-    const hash = window.location.hash;
-    const token = new URLSearchParams(hash.substring(1)).get('access_token');
-
-    // Ana pencereye mesaj at
-    window.opener.postMessage({ type: 'SPOTIFY_TOKEN', token: token }, '*');
+    if (error) {
+        console.error("Spotify OAuth Hatası:", error, errorDescription);
+        // Ana pencereye hata mesajı gönder
+        window.opener.postMessage({ 
+            type: 'SPOTIFY_ERROR', 
+            error: error,
+            errorDescription: errorDescription 
+        }, '*');
+        alert(`Spotify giriş hatası: ${error}\n\n${errorDescription || 'Lütfen Spotify Developer Dashboard ayarlarınızı kontrol edin.'}`);
+        window.close();
+        throw new Error("Popup hata ile kapatılıyor...");
+    }
     
-    // Kendini kapat
-    window.close();
-    
-    // Kodun geri kalanını çalıştırmayı durdur (Gereksiz yükleme yapmasın)
-    throw new Error("Popup kapatılıyor..."); 
+    if (token) {
+        console.log("Popup modu algılandı. Token ana pencereye gönderiliyor...");
+        // Ana pencereye mesaj at
+        window.opener.postMessage({ type: 'SPOTIFY_TOKEN', token: token }, '*');
+        // Kısa bir gecikme sonra kapat (mesajın gönderildiğinden emin olmak için)
+        setTimeout(() => {
+            window.close();
+        }, 100);
+        // Kodun geri kalanını çalıştırmayı durdur
+        throw new Error("Popup kapatılıyor..."); 
+    }
 }
 
 // --- 1. SAYFA YÜKLENİNCE ---
@@ -35,11 +51,24 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Spotify Redirect URI'yi göster
+    const redirectUriDisplay = document.getElementById('spotify-redirect-uri-display');
+    if (redirectUriDisplay) {
+        redirectUriDisplay.textContent = window.location.origin + window.location.pathname;
+    }
+
     // Spotify Mesajlarını Dinle (Popup'tan gelen mesajı yakala)
     window.addEventListener('message', (event) => {
+        // Güvenlik: Sadece aynı origin'den gelen mesajları kabul et
+        // (Geliştirme için * kullanıyoruz ama production'da spesifik origin kullanılmalı)
         if (event.data.type === 'SPOTIFY_TOKEN') {
             console.log("Spotify Token Alındı:", event.data.token);
-            Spotify.handleTokenFromPopup(event.data.token); // Bu fonksiyonu spotify.js'e ekleyeceğiz
+            if (event.data.token) {
+                Spotify.handleTokenFromPopup(event.data.token);
+            }
+        } else if (event.data.type === 'SPOTIFY_ERROR') {
+            console.error("Spotify Giriş Hatası:", event.data.error, event.data.errorDescription);
+            alert(`Spotify giriş hatası: ${event.data.error}\n\n${event.data.errorDescription || 'Lütfen Spotify Developer Dashboard ayarlarınızı kontrol edin.'}`);
         }
     });
 
@@ -318,37 +347,42 @@ window.searchSpotify = function() {
     if(q) Spotify.searchSpotify(q);
 };
 
-// Başlat Tuşu (Arama Sonucundan)
-window.spCmdPlay = function(uri) {
-    sendSpotifyCommand('play', uri, 0);
-};
-
-// Sıraya Ekle Tuşu
-window.spCmdQueue = function(uri, name) {
-    sendSpotifyCommand('queue', uri, 0, name);
-};
-
 // Player Kontrolleri
 window.spPlayPause = function() {
     if(!state.spotifyPlayer) return;
     state.spotifyPlayer.getCurrentState().then(s => {
         if(!s) return;
         if(s.paused) {
-            sendSpotifyCommand('play', s.track_window.current_track.uri, s.position);
+            const track = s.track_window.current_track;
+            Network.sendSpotifyCommand('play', track.uri, s.position, track.name, track.artists[0].name, track.album.images[0]?.url);
         } else {
-            sendSpotifyCommand('pause', null);
+            Network.sendSpotifyCommand('pause', null, 0);
         }
     });
 };
 
 window.spNext = function() {
-    if(state.spotifyPlayer) state.spotifyPlayer.nextTrack();
-    // Not: Next track API üzerinden tetiklenmeli ve yeni şarkı 'play' komutu olarak gönderilmeli
+    if(state.spotifyPlayer) {
+        state.spotifyPlayer.nextTrack().then(() => {
+            // Şarkı değişti, state güncellenecek
+        });
+    }
 };
 
 window.spPrev = function() {
-    if(state.spotifyPlayer) state.spotifyPlayer.previousTrack();
+    if(state.spotifyPlayer) {
+        state.spotifyPlayer.previousTrack().then(() => {
+            // Şarkı değişti, state güncellenecek
+        });
+    }
 };
 
-// --- YENİ WINDOW BAĞLANTISI (En alta ekleyin) ---
 window.deleteApp = function(id) { Apps.deleteApp(id); };
+
+// Arama input'u için Enter tuşu desteği
+const spSearchInput = document.getElementById('sp-search-input');
+if(spSearchInput) {
+    spSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') window.searchSpotify();
+    });
+}
