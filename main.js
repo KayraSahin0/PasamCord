@@ -7,13 +7,13 @@ import * as Spotify from './spotify.js';
 import * as Apps from './apps.js';
 
 // --- 0. KRİTİK: POPUP KONTROLÜ (Bunu En Başa Ekleyin) ---
-// Eğer bu sayfa bir popup ise ve URL'de Spotify token varsa:
-if (window.opener && window.location.hash) {
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const token = params.get('access_token');
-    const error = params.get('error');
-    const errorDescription = params.get('error_description');
+// Eğer bu sayfa bir popup ise ve URL'de Spotify authorization code varsa:
+if (window.opener && window.location.search) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+    const state = urlParams.get('state');
     
     if (error) {
         console.error("Spotify OAuth Hatası:", error, errorDescription);
@@ -28,14 +28,35 @@ if (window.opener && window.location.hash) {
         throw new Error("Popup hata ile kapatılıyor...");
     }
     
-    if (token) {
-        console.log("Popup modu algılandı. Token ana pencereye gönderiliyor...");
-        // Ana pencereye mesaj at
-        window.opener.postMessage({ type: 'SPOTIFY_TOKEN', token: token }, '*');
+    if (code) {
+        console.log("Popup modu algılandı. Authorization code yakalandı:", code.substring(0, 20) + "...");
+        
+        // State kontrolü
+        const savedState = sessionStorage.getItem('spotify_oauth_state');
+        if (state && savedState && state !== savedState) {
+            console.error("State mismatch! State:", state, "Saved:", savedState);
+            alert("Güvenlik hatası! Lütfen tekrar deneyin.");
+            window.close();
+            throw new Error("Popup güvenlik hatası ile kapatılıyor...");
+        }
+        
+        // State'i temizle (eğer varsa)
+        if (savedState) {
+            sessionStorage.removeItem('spotify_oauth_state');
+        }
+        
+        // Ana pencereye code gönder (token exchange ana pencerede yapılacak)
+        // Hemen gönder, gecikme olmadan
+        if (window.opener && !window.opener.closed) {
+            window.opener.postMessage({ type: 'SPOTIFY_CODE', code: code }, '*');
+            console.log("Code ana pencereye gönderildi");
+        }
+        
         // Kısa bir gecikme sonra kapat (mesajın gönderildiğinden emin olmak için)
         setTimeout(() => {
             window.close();
-        }, 100);
+        }, 200);
+        
         // Kodun geri kalanını çalıştırmayı durdur
         throw new Error("Popup kapatılıyor..."); 
     }
@@ -58,10 +79,24 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // Spotify Mesajlarını Dinle (Popup'tan gelen mesajı yakala)
-    window.addEventListener('message', (event) => {
+    window.addEventListener('message', async (event) => {
         // Güvenlik: Sadece aynı origin'den gelen mesajları kabul et
         // (Geliştirme için * kullanıyoruz ama production'da spesifik origin kullanılmalı)
-        if (event.data.type === 'SPOTIFY_TOKEN') {
+        if (event.data.type === 'SPOTIFY_CODE') {
+            console.log("Spotify Authorization Code Alındı, token exchange yapılıyor...");
+            if (event.data.code) {
+                // Authorization code'u token'a çevir
+                try {
+                    const token = await Spotify.exchangeCodeForToken(event.data.code);
+                    if (token) {
+                        Spotify.handleTokenFromPopup(token);
+                    }
+                } catch (err) {
+                    console.error("Token exchange hatası:", err);
+                    alert(`Token alınamadı: ${err.message}`);
+                }
+            }
+        } else if (event.data.type === 'SPOTIFY_TOKEN') {
             console.log("Spotify Token Alındı:", event.data.token);
             if (event.data.token) {
                 Spotify.handleTokenFromPopup(event.data.token);

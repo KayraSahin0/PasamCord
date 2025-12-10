@@ -3,6 +3,7 @@ import * as Network from './network.js';
 
 // --- SPOTIFY AYARLARI ---
 const CLIENT_ID = '9221726daee146168f6569a3dfa4ff2e'; 
+const CLIENT_SECRET = '29fbf0028b534435896915ce64af8e75';
 // ÖNEMLİ: Redirect URI'nin Spotify Developer Dashboard'da kayıtlı olması gerekiyor
 // Sonunda / olmadan veya olarak kayıtlı olmalı - Dashboard'daki ile TAM EŞLEŞMELİ
 const REDIRECT_URI = window.location.origin + window.location.pathname; 
@@ -19,8 +20,13 @@ export function loginToSpotify() {
     console.log("Redirect URI:", REDIRECT_URI);
     console.log("Bu URI'nin Spotify Developer Dashboard'da kayıtlı olduğundan emin olun!");
     
-    // OAuth URL'ini oluştur
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES.join(' '))}&show_dialog=true`;
+    // Authorization Code Flow kullanıyoruz (client secret için gerekli)
+    // State oluştur (CSRF koruması için)
+    const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('spotify_oauth_state', state);
+    
+    // OAuth URL'ini oluştur (response_type=code)
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES.join(' '))}&state=${state}&show_dialog=true`;
     
     console.log("Spotify Auth URL:", authUrl);
     
@@ -36,9 +42,7 @@ export function loginToSpotify() {
         return;
     }
     
-    // Popup'tan token'ı yakalamak için interval
-    // Not: Cross-origin hatası alırsak normal, çünkü popup Spotify'a yönlendirilecek
-    // Token yakalama işlemi redirect URI'ye döndüğünde main.js'deki kod tarafından yapılacak
+    // Popup'un kapanmasını kontrol et (code yakalama main.js'de yapılacak)
     const checkInterval = setInterval(() => {
         try {
             // Popup kapalı mı kontrol et
@@ -46,42 +50,8 @@ export function loginToSpotify() {
                 clearInterval(checkInterval);
                 return;
             }
-            
-            // Popup içindeki URL'yi kontrol et (sadece aynı origin'de çalışır)
-            try {
-                const popupUrl = popup.location.href;
-                
-                // URL'de access_token veya error var mı?
-                if (popupUrl.includes('access_token') || popupUrl.includes('error=')) {
-                    clearInterval(checkInterval);
-                    
-                    // Hash'ten parametreleri al
-                    const hash = popup.location.hash.substring(1);
-                    const params = new URLSearchParams(hash);
-                    const token = params.get('access_token');
-                    const error = params.get('error');
-                    const errorDescription = params.get('error_description');
-                    
-                    if (error) {
-                        console.error("Spotify OAuth Hatası:", error, errorDescription);
-                        alert(`Spotify giriş hatası: ${error}\n\n${errorDescription || 'Lütfen Spotify Developer Dashboard ayarlarınızı kontrol edin.'}\n\nRedirect URI: ${REDIRECT_URI}`);
-                        popup.close();
-                        return;
-                    }
-                    
-                    if (token) {
-                        console.log("Token popup'tan yakalandı");
-                        // Token'ı ana pencereye gönder
-                        window.postMessage({ type: 'SPOTIFY_TOKEN', token: token }, '*');
-                        popup.close();
-                    }
-                }
-            } catch (e) {
-                // Cross-origin hatası - popup henüz Spotify'a yönlendirilmiş
-                // Bu normal, popup redirect URI'ye döndüğünde main.js'deki kod yakalayacak
-            }
         } catch (e) {
-            // Popup erişilemiyor, normal
+            // Popup erişilemiyor, normal (cross-origin)
         }
     }, 500);
     
@@ -93,6 +63,70 @@ export function loginToSpotify() {
             alert("Giriş zaman aşımına uğradı. Lütfen tekrar deneyin.");
         }
     }, 300000);
+}
+
+// Authorization code'u access token'a çevir (Export edildi - main.js'den çağrılabilir)
+export async function exchangeCodeForToken(code) {
+    try {
+        // Client secret kullanarak token exchange yap
+        // NOT: Bu işlem normalde backend'de yapılmalı ama client-side'da yapıyoruz
+        // Güvenlik için client secret'ı backend'e taşımanız önerilir
+        
+        console.log("Token exchange başlatılıyor...");
+        console.log("Code:", code.substring(0, 20) + "...");
+        console.log("Redirect URI:", REDIRECT_URI);
+        
+        // Redirect URI'nin sonunda / olup olmadığını kontrol et
+        // Spotify Developer Dashboard'da kayıtlı URI ile tam eşleşmeli
+        let redirectUri = REDIRECT_URI;
+        
+        // Eğer pathname '/' ile bitiyorsa, sonundaki '/' karakterini kaldır
+        // Çünkü bazı durumlarda Spotify bunu kabul etmeyebilir
+        if (redirectUri.endsWith('/') && redirectUri !== 'http://127.0.0.1:5500/') {
+            // Eğer sadece origin + '/' ise bırak, aksi halde kaldır
+            const path = new URL(redirectUri).pathname;
+            if (path !== '/') {
+                redirectUri = redirectUri.slice(0, -1);
+            }
+        }
+        
+        console.log("Kullanılan Redirect URI:", redirectUri);
+        
+        const response = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Basic ' + btoa(CLIENT_ID + ':' + CLIENT_SECRET)
+            },
+            body: new URLSearchParams({
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: redirectUri
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            console.error("Token exchange hatası:", error);
+            console.error("Response status:", response.status);
+            console.error("Response headers:", response.headers);
+            
+            // Daha detaylı hata mesajı
+            let errorMsg = error.error_description || error.error || 'Token exchange failed';
+            if (error.error === 'invalid_grant') {
+                errorMsg = 'Authorization code geçersiz veya süresi dolmuş. Lütfen tekrar giriş yapın.';
+            }
+            
+            throw new Error(errorMsg);
+        }
+        
+        const data = await response.json();
+        console.log("Token başarıyla alındı!");
+        return data.access_token;
+    } catch (e) {
+        console.error("Token exchange hatası:", e);
+        throw e;
+    }
 }
 
 export async function handleTokenFromPopup(token) {
